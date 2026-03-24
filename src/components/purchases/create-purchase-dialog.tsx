@@ -70,13 +70,12 @@ export function CreatePurchaseDialog({
     defaultValues: {
       supplier: '',
       notes: '',
-      items: [],
     },
   });
 
   useEffect(() => {
     if (open) {
-      reset({ supplier: '', notes: '', items: [] });
+      reset({ supplier: '', notes: '' });
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setItems([]);
        
