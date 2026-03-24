@@ -17,6 +17,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -53,6 +60,8 @@ export function ClientFormDialog({
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<ClientFormData>({
     resolver: zodResolver(clientSchema),
@@ -131,16 +140,25 @@ export function ClientFormDialog({
           <div className="grid grid-cols-[140px_1fr] gap-3">
             <div className="space-y-1.5">
               <Label className="text-xs">Tipo doc.</Label>
-              <select
-                className="h-10 w-full rounded-xl border border-input bg-transparent px-3 text-sm focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-                {...register('documentType')}
+              <Select
+                value={watch('documentType')}
+                onValueChange={(val) =>
+                  setValue('documentType', val as ClientFormData['documentType'], {
+                    shouldValidate: true,
+                  })
+                }
               >
-                {documentTypeOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="h-10 rounded-xl">
+                  <SelectValue placeholder="Tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {documentTypeOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Número</Label>
@@ -249,7 +267,7 @@ export function ClientFormDialog({
             </div>
           </div>
 
-          <DialogFooter className="gap-2 pt-2">
+          <DialogFooter className="gap-2 pt-2 bg-transparent border-t-0">
             <Button
               type="button"
               variant="outline"

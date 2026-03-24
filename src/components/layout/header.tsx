@@ -2,6 +2,7 @@
 
 import { useRouter, usePathname } from 'next/navigation';
 import { LogOut, Bell, Search } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -28,6 +29,7 @@ const roleLabels: Record<string, string> = {
 export function Header() {
   const router = useRouter();
   const pathname = usePathname();
+  const queryClient = useQueryClient();
   const user = useAuthStore((s) => s.user);
   const refreshToken = useAuthStore((s) => s.refreshToken);
   const logout = useAuthStore((s) => s.logout);
@@ -45,6 +47,7 @@ export function Header() {
     } catch {
       // Silent logout even if API fails
     } finally {
+      queryClient.clear();
       logout();
       toast.success('Sesión cerrada exitosamente');
       router.refresh();
