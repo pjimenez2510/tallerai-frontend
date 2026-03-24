@@ -34,11 +34,12 @@ import {
   AlertDialogCancel,
 } from '@/components/ui/alert-dialog';
 import { ProductFormDialog } from './product-form-dialog';
-import { useProducts, useDeactivateProduct } from '@/hooks/use-products';
+import { useProducts, useDeactivateProduct, useInventoryReport } from '@/hooks/use-products';
 import type { Product } from '@/types/product.types';
 
 export function InventoryTable() {
   const { data: products, isLoading } = useProducts();
+  const { data: report } = useInventoryReport();
   const deactivateProduct = useDeactivateProduct();
 
   const [search, setSearch] = useState('');
@@ -57,11 +58,6 @@ export function InventoryTable() {
       (p.category?.toLowerCase().includes(q) ?? false)
     );
   });
-
-  const lowStockCount =
-    products?.filter((p) => p.isLowStock).length ?? 0;
-  const totalValue =
-    products?.reduce((sum, p) => sum + p.costPrice * p.stock, 0) ?? 0;
 
   function handleEdit(product: Product) {
     setEditingProduct(product);
@@ -89,6 +85,69 @@ export function InventoryTable() {
 
   return (
     <>
+      {/* Inventory Report Summary */}
+      {report && (
+        <div className="mb-6 space-y-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
+              <p className="text-2xl font-bold text-[var(--color-text-primary)]">
+                {report.totalProducts}
+              </p>
+              <p className="text-xs text-[var(--color-text-secondary)] mt-1">
+                Total productos
+              </p>
+            </div>
+            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
+              <p className="text-2xl font-bold text-[var(--color-text-primary)]">
+                ${report.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+              </p>
+              <p className="text-xs text-[var(--color-text-secondary)] mt-1">
+                Valor total inventario
+              </p>
+            </div>
+            {report.lowStockCount > 0 ? (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-amber-500" />
+                  <p className="text-2xl font-bold text-amber-700">
+                    {report.lowStockCount}
+                  </p>
+                </div>
+                <p className="text-xs text-amber-600 mt-1">Alertas de stock bajo</p>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
+                <p className="text-2xl font-bold text-[var(--color-success)]">0</p>
+                <p className="text-xs text-[var(--color-text-secondary)] mt-1">
+                  Alertas de stock
+                </p>
+              </div>
+            )}
+          </div>
+
+          {report.categorySummary.length > 0 && (
+            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
+              <p className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider mb-3">
+                Categorías
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {report.categorySummary.map((cat) => (
+                  <span
+                    key={cat.category}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-secondary)] px-3 py-1 text-xs font-medium text-[var(--color-text-primary)]"
+                  >
+                    {cat.category}
+                    <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-[#1e3a5f]/10 text-[10px] font-bold text-[#1e3a5f] px-1">
+                      {cat.count}
+                    </span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Toolbar */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <div className="relative w-full sm:w-80">
@@ -108,52 +167,6 @@ export function InventoryTable() {
           <Plus className="h-4 w-4 mr-2" />
           Nuevo Producto
         </Button>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
-          <p className="text-2xl font-bold text-[var(--color-text-primary)]">
-            {products?.length ?? 0}
-          </p>
-          <p className="text-xs text-[var(--color-text-secondary)] mt-1">
-            Productos activos
-          </p>
-        </div>
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
-          <p className="text-2xl font-bold text-[var(--color-text-primary)]">
-            ${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-          </p>
-          <p className="text-xs text-[var(--color-text-secondary)] mt-1">
-            Valor del inventario
-          </p>
-        </div>
-        {lowStockCount > 0 ? (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-amber-500" />
-              <p className="text-2xl font-bold text-amber-700">
-                {lowStockCount}
-              </p>
-            </div>
-            <p className="text-xs text-amber-600 mt-1">Stock bajo</p>
-          </div>
-        ) : (
-          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
-            <p className="text-2xl font-bold text-[var(--color-success)]">0</p>
-            <p className="text-xs text-[var(--color-text-secondary)] mt-1">
-              Alertas de stock
-            </p>
-          </div>
-        )}
-        <div className="hidden sm:block rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
-          <p className="text-2xl font-bold text-[var(--color-text-primary)]">
-            {filtered?.length ?? 0}
-          </p>
-          <p className="text-xs text-[var(--color-text-secondary)] mt-1">
-            Resultados
-          </p>
-        </div>
       </div>
 
       {/* Table */}

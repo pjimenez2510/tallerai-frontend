@@ -48,4 +48,12 @@ export const workOrdersApi = {
   removePart(woId: string, partId: string) {
     return apiClient.delete<null>(`/work-orders/${woId}/parts/${partId}`);
   },
+
+  listByClient(clientId: string) {
+    return apiClient.get<WorkOrder[]>(`/work-orders/by-client/${clientId}`);
+  },
+
+  listByVehicle(vehicleId: string) {
+    return apiClient.get<WorkOrder[]>(`/work-orders/by-vehicle/${vehicleId}`);
+  },
 };

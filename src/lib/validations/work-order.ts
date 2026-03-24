@@ -12,6 +12,7 @@ export const createWorkOrderSchema = z.object({
     .optional(),
   mileageIn: z.number().int().min(0).optional(),
   assignedTo: z.string().optional().or(z.literal('')),
+  estimatedDate: z.string().optional().or(z.literal('')),
 });
 
 export type CreateWorkOrderFormData = z.infer<typeof createWorkOrderSchema>;

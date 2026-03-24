@@ -50,6 +50,13 @@ export interface AddStockMovementRequest {
   notes?: string;
 }
 
+export interface InventoryReport {
+  totalProducts: number;
+  totalValue: number;
+  lowStockCount: number;
+  categorySummary: { category: string; count: number; value: number }[];
+}
+
 export interface UpdateProductRequest {
   code?: string;
   oemCode?: string;

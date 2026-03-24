@@ -8,6 +8,7 @@ import type {
   UpdateProductRequest,
   AddStockMovementRequest,
 } from '@/types/product.types';
+
 import { ApiError } from '@/types/api.types';
 
 export function useProducts() {
@@ -98,6 +99,16 @@ export function useProductMovements(id: string) {
       return response.data;
     },
     enabled: !!id,
+  });
+}
+
+export function useInventoryReport() {
+  return useQuery({
+    queryKey: ['products', 'report'],
+    queryFn: async () => {
+      const response = await productsApi.getReport();
+      return response.data;
+    },
   });
 }
 

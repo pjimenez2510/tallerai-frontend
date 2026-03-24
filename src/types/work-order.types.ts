@@ -81,6 +81,7 @@ export interface CreateWorkOrderRequest {
   priority?: WorkOrderPriority;
   mileageIn?: number;
   assignedTo?: string;
+  estimatedDate?: string;
 }
 
 export interface UpdateWorkOrderRequest {
@@ -90,4 +91,5 @@ export interface UpdateWorkOrderRequest {
   diagnosis?: string;
   internalNotes?: string;
   assignedTo?: string | null;
+  estimatedDate?: string | null;
 }

@@ -28,7 +28,7 @@ import {
 import { ClientFormDialog } from './client-form-dialog';
 import { clientsApi } from '@/lib/api/clients';
 import { vehiclesApi } from '@/lib/api/vehicles';
-import { workOrdersApi } from '@/lib/api/work-orders';
+import { useWorkOrdersByClient } from '@/hooks/use-work-orders';
 
 const docTypeLabels: Record<string, string> = {
   cedula: 'Cédula',
@@ -75,14 +75,7 @@ export function ClientDetailContent({ clientId }: ClientDetailContentProps) {
     enabled: !!clientId,
   });
 
-  const { data: workOrders, isLoading: loadingOrders } = useQuery({
-    queryKey: ['work-orders', 'by-client', clientId],
-    queryFn: async () => {
-      const response = await workOrdersApi.list();
-      return (response.data ?? []).filter((wo) => wo.clientId === clientId);
-    },
-    enabled: !!clientId,
-  });
+  const { data: workOrders, isLoading: loadingOrders } = useWorkOrdersByClient(clientId);
 
   if (loadingClient) {
     return (

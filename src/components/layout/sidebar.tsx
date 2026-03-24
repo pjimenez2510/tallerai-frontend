@@ -12,6 +12,7 @@ import {
   UserCog,
   Receipt,
   UserCircle,
+  ShoppingCart,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth.store';
@@ -52,6 +53,12 @@ const navItems = [
     label: 'Servicios',
     icon: Receipt,
     color: 'text-teal-400',
+  },
+  {
+    href: '/purchases',
+    label: 'Compras',
+    icon: ShoppingCart,
+    color: 'text-indigo-400',
   },
 ];
 
