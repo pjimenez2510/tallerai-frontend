@@ -2,9 +2,10 @@ import type { Metadata } from 'next';
 import { Inter, JetBrains_Mono, Geist } from 'next/font/google';
 import { Toaster } from 'sonner';
 import './globals.css';
-import { cn } from "@/lib/utils";
+import { cn } from '@/lib/utils';
+import { QueryProvider } from '@/providers/query-provider';
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+const geist = Geist({ subsets: ['latin'], variable: '--font-sans' });
 
 const inter = Inter({
   subsets: ['latin'],
@@ -26,7 +27,13 @@ export const metadata: Metadata = {
   description:
     'Sistema de Gestión de Órdenes de Trabajo para Talleres Mecánicos con IA. Digitaliza tu taller, gestiona OTs, inventario y clientes en una sola plataforma.',
   applicationName: 'TallerIA',
-  keywords: ['taller mecánico', 'órdenes de trabajo', 'gestión automotriz', 'IA', 'Ecuador'],
+  keywords: [
+    'taller mecánico',
+    'órdenes de trabajo',
+    'gestión automotriz',
+    'IA',
+    'Ecuador',
+  ],
 };
 
 export default function RootLayout({
@@ -37,17 +44,25 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={cn("h-full", inter.variable, jetbrainsMono.variable, "font-sans", geist.variable)}
+      className={cn(
+        'h-full',
+        inter.variable,
+        jetbrainsMono.variable,
+        'font-sans',
+        geist.variable,
+      )}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col antialiased">
-        {children}
-        <Toaster
-          position="top-right"
-          richColors
-          closeButton
-          duration={4000}
-        />
+        <QueryProvider>
+          {children}
+          <Toaster
+            position="top-right"
+            richColors
+            closeButton
+            duration={4000}
+          />
+        </QueryProvider>
       </body>
     </html>
   );
