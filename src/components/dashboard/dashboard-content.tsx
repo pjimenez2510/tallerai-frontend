@@ -77,13 +77,16 @@ export function DashboardContent() {
   const router = useRouter();
   const { data: metrics, isLoading } = useDashboardMetrics();
 
-  const chartData = (metrics?.workOrdersByStatus ?? [])
-    .filter((s) => s.count > 0)
-    .map((s) => ({
-      name: STATUS_LABELS[s.status] ?? s.status,
-      value: s.count,
-      color: STATUS_COLORS[s.status] ?? '#94a3b8',
-    }));
+  const byStatus = metrics?.workOrders?.byStatus;
+  const chartData = byStatus
+    ? Object.entries(byStatus)
+        .filter(([, count]) => count > 0)
+        .map(([status, count]) => ({
+          name: STATUS_LABELS[status] ?? status,
+          value: count,
+          color: STATUS_COLORS[status] ?? '#94a3b8',
+        }))
+    : [];
 
   return (
     <div className="space-y-6">
@@ -98,15 +101,15 @@ export function DashboardContent() {
       {/* Stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <StatCard
-          label="OTs Activas"
-          value={metrics?.totalActiveWorkOrders ?? 0}
+          label="OTs Totales"
+          value={metrics?.workOrders?.total ?? 0}
           icon={<ClipboardList className="h-5 w-5 text-blue-600" />}
           borderColor="border-l-blue-500"
           loading={isLoading}
         />
         <StatCard
           label="Clientes"
-          value={metrics?.totalClients ?? 0}
+          value={metrics?.clients?.total ?? 0}
           icon={<Users className="h-5 w-5 text-emerald-600" />}
           borderColor="border-l-emerald-500"
           loading={isLoading}
@@ -116,18 +119,18 @@ export function DashboardContent() {
           value={
             isLoading
               ? '—'
-              : `$${(metrics?.inventoryValue ?? 0).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+              : `$${(metrics?.inventory?.totalValue ?? 0).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
           }
           icon={<Package className="h-5 w-5 text-amber-600" />}
           borderColor="border-l-amber-500"
           loading={isLoading}
         />
         <StatCard
-          label="Ingresos del Mes"
+          label="Ingresos"
           value={
             isLoading
               ? '—'
-              : `$${(metrics?.monthlyRevenue ?? 0).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+              : `$${(metrics?.revenue?.total ?? 0).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
           }
           icon={<DollarSign className="h-5 w-5 text-[#f97316]" />}
           borderColor="border-l-[#f97316]"

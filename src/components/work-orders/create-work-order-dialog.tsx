@@ -260,47 +260,45 @@ export function CreateWorkOrderDialog({
             )}
           </div>
 
-          {/* Priority + Mileage */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs">Prioridad</Label>
-              <div className="relative">
-                <div className="flex gap-1">
-                  {priorityOptions.map((opt) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() =>
-                        setValue(
-                          'priority',
-                          opt.value as CreateWorkOrderFormData['priority'],
-                        )
-                      }
-                      className={cn(
-                        'flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border transition-colors',
-                        watch('priority') === opt.value
-                          ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/5 text-[var(--color-primary)]'
-                          : 'border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-text-secondary)]',
-                      )}
-                    >
-                      <span className={cn('h-2 w-2 rounded-full', opt.dot)} />
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+          {/* Priority */}
+          <div className="space-y-1.5">
+            <Label className="text-xs">Prioridad</Label>
+            <div className="flex flex-wrap gap-2">
+              {priorityOptions.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() =>
+                    setValue(
+                      'priority',
+                      opt.value as CreateWorkOrderFormData['priority'],
+                    )
+                  }
+                  className={cn(
+                    'flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border transition-colors',
+                    watch('priority') === opt.value
+                      ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/5 text-[var(--color-primary)]'
+                      : 'border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-text-secondary)]',
+                  )}
+                >
+                  <span className={cn('h-2 w-2 rounded-full', opt.dot)} />
+                  {opt.label}
+                </button>
+              ))}
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Km de ingreso</Label>
-              <div className="relative">
-                <Gauge className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-text-secondary)]" />
-                <Input
-                  type="number"
-                  placeholder="45000"
-                  className="h-10 pl-10 rounded-xl"
-                  {...register('mileageIn', { valueAsNumber: true })}
-                />
-              </div>
+          </div>
+
+          {/* Mileage */}
+          <div className="space-y-1.5">
+            <Label className="text-xs">Km de ingreso</Label>
+            <div className="relative">
+              <Gauge className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-text-secondary)]" />
+              <Input
+                type="number"
+                placeholder="45000"
+                className="h-10 pl-10 rounded-xl"
+                {...register('mileageIn', { valueAsNumber: true })}
+              />
             </div>
           </div>
 
