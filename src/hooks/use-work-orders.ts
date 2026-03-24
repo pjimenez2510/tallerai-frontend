@@ -156,6 +156,28 @@ export function useAddPart() {
   });
 }
 
+export function useWorkOrdersByClient(clientId: string) {
+  return useQuery({
+    queryKey: ['work-orders', 'by-client', clientId],
+    queryFn: async () => {
+      const response = await workOrdersApi.listByClient(clientId);
+      return response.data;
+    },
+    enabled: !!clientId,
+  });
+}
+
+export function useWorkOrdersByVehicle(vehicleId: string) {
+  return useQuery({
+    queryKey: ['work-orders', 'by-vehicle', vehicleId],
+    queryFn: async () => {
+      const response = await workOrdersApi.listByVehicle(vehicleId);
+      return response.data;
+    },
+    enabled: !!vehicleId,
+  });
+}
+
 export function useRemovePart() {
   const queryClient = useQueryClient();
 
