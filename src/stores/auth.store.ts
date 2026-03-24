@@ -10,6 +10,7 @@ interface AuthState {
   accessToken: string | null;
   refreshToken: string | null;
   isAuthenticated: boolean;
+  hasHydrated: boolean;
 
   setAuth: (data: {
     user: AuthUser;
@@ -31,6 +32,7 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       refreshToken: null,
       isAuthenticated: false,
+      hasHydrated: false,
 
       setAuth: ({ user, tenant, accessToken, refreshToken }) =>
         set({
@@ -65,3 +67,16 @@ export const useAuthStore = create<AuthState>()(
     },
   ),
 );
+
+// Initialize hydration listener on client side only
+if (typeof window !== 'undefined') {
+  const unsub = useAuthStore.persist.onFinishHydration(() => {
+    useAuthStore.setState({ hasHydrated: true });
+    unsub();
+  });
+
+  // If already hydrated synchronously
+  if (useAuthStore.persist.hasHydrated()) {
+    useAuthStore.setState({ hasHydrated: true });
+  }
+}

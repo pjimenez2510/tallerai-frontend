@@ -1,4 +1,4 @@
-import type { ApiError, ApiResponse } from '@/types/api.types';
+import { ApiError, type ApiErrorData, type ApiResponse } from '@/types/api.types';
 import type { RefreshResponse } from '@/types/auth.types';
 import { useAuthStore } from '@/stores/auth.store';
 
@@ -90,7 +90,8 @@ async function apiRequest<T>(
   const json: unknown = await response.json();
 
   if (!response.ok) {
-    throw json as ApiError;
+    const errorData = json as ApiErrorData;
+    throw new ApiError(errorData);
   }
 
   return json as ApiResponse<T>;
