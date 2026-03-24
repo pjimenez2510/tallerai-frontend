@@ -7,7 +7,7 @@ import type {
   CreateClientRequest,
   UpdateClientRequest,
 } from '@/types/client.types';
-import type { ApiError } from '@/types/api.types';
+import { ApiError } from '@/types/api.types';
 
 export function useClients() {
   return useQuery({

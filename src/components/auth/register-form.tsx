@@ -24,7 +24,7 @@ import { Label } from '@/components/ui/label';
 import { registerSchema, type RegisterFormData } from '@/lib/validations/auth';
 import { authApi } from '@/lib/api/auth';
 import { useAuthStore } from '@/stores/auth.store';
-import type { ApiError } from '@/types/api.types';
+import { ApiError } from '@/types/api.types';
 
 export function RegisterForm() {
   const router = useRouter();
