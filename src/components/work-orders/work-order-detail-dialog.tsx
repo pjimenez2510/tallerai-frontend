@@ -191,7 +191,7 @@ export function WorkOrderDetailDialog({
 
   return (
     <Dialog open={!!initialWorkOrder} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle className="text-lg font-bold">
