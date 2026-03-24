@@ -305,7 +305,7 @@ export function VehicleFormDialog({
             </div>
           </div>
 
-          <DialogFooter className="gap-2 pt-2">
+          <DialogFooter className="gap-2 pt-2 bg-transparent border-t-0">
             <Button
               type="button"
               variant="outline"

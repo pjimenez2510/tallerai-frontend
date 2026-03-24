@@ -44,7 +44,7 @@ export function ClientCombobox({ value, onChange, error }: ClientComboboxProps) 
               type="button"
               variant="outline"
               className={cn(
-                'w-full h-10 justify-between rounded-xl font-normal',
+                'w-full h-10 justify-between rounded-xl font-normal bg-transparent hover:bg-transparent aria-expanded:bg-transparent dark:bg-transparent',
                 !value && 'text-muted-foreground',
               )}
             />
