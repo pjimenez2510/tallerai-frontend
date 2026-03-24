@@ -31,6 +31,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import {
+  useWorkOrder,
   useUpdateWorkOrder,
   useAddTask,
   useUpdateTask,
@@ -90,7 +91,7 @@ interface WorkOrderDetailDialogProps {
 }
 
 export function WorkOrderDetailDialog({
-  workOrder,
+  workOrder: initialWorkOrder,
   onClose,
 }: WorkOrderDetailDialogProps) {
   const [activeTab, setActiveTab] = useState<TabType>('detalle');
@@ -101,6 +102,10 @@ export function WorkOrderDetailDialog({
   const addPart = useAddPart();
   const removePart = useRemovePart();
   const { data: products } = useProducts();
+
+  // Fetch live data so tasks/parts update without closing the dialog
+  const { data: liveWorkOrder } = useWorkOrder(initialWorkOrder?.id ?? '');
+  const workOrder = liveWorkOrder ?? initialWorkOrder;
 
   const [productSearch, setProductSearch] = useState('');
 
@@ -185,7 +190,7 @@ export function WorkOrderDetailDialog({
   );
 
   return (
-    <Dialog open={!!workOrder} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={!!initialWorkOrder} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center justify-between">
