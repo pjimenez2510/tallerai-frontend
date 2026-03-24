@@ -5,6 +5,7 @@ import type {
   UpdateProductRequest,
   StockMovement,
   AddStockMovementRequest,
+  InventoryReport,
 } from '@/types/product.types';
 
 export const productsApi = {
@@ -42,5 +43,9 @@ export const productsApi = {
 
   getMovements(id: string) {
     return apiClient.get<StockMovement[]>(`/products/${id}/movements`);
+  },
+
+  getReport() {
+    return apiClient.get<InventoryReport>('/products/report');
   },
 };
