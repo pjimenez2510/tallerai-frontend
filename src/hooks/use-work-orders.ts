@@ -7,6 +7,9 @@ import type {
   WorkOrderStatus,
   CreateWorkOrderRequest,
   UpdateWorkOrderRequest,
+  AddTaskRequest,
+  UpdateTaskRequest,
+  AddPartRequest,
 } from '@/types/work-order.types';
 import { ApiError } from '@/types/api.types';
 
@@ -69,6 +72,104 @@ export function useUpdateWorkOrder() {
     },
     onError: (error: ApiError) => {
       toast.error(error.message || 'Error al actualizar orden de trabajo');
+    },
+  });
+}
+
+export function useAddTask() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ woId, data }: { woId: string; data: AddTaskRequest }) => {
+      const response = await workOrdersApi.addTask(woId, data);
+      return response;
+    },
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ['work-orders'] });
+      toast.success(response.message);
+    },
+    onError: (error: ApiError) => {
+      toast.error(error.message || 'Error al agregar tarea');
+    },
+  });
+}
+
+export function useUpdateTask() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      woId,
+      taskId,
+      data,
+    }: {
+      woId: string;
+      taskId: string;
+      data: UpdateTaskRequest;
+    }) => {
+      const response = await workOrdersApi.updateTask(woId, taskId, data);
+      return response;
+    },
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ['work-orders'] });
+      toast.success(response.message);
+    },
+    onError: (error: ApiError) => {
+      toast.error(error.message || 'Error al actualizar tarea');
+    },
+  });
+}
+
+export function useDeleteTask() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ woId, taskId }: { woId: string; taskId: string }) => {
+      const response = await workOrdersApi.deleteTask(woId, taskId);
+      return response;
+    },
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ['work-orders'] });
+      toast.success(response.message);
+    },
+    onError: (error: ApiError) => {
+      toast.error(error.message || 'Error al eliminar tarea');
+    },
+  });
+}
+
+export function useAddPart() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ woId, data }: { woId: string; data: AddPartRequest }) => {
+      const response = await workOrdersApi.addPart(woId, data);
+      return response;
+    },
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ['work-orders'] });
+      toast.success(response.message);
+    },
+    onError: (error: ApiError) => {
+      toast.error(error.message || 'Error al agregar repuesto');
+    },
+  });
+}
+
+export function useRemovePart() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ woId, partId }: { woId: string; partId: string }) => {
+      const response = await workOrdersApi.removePart(woId, partId);
+      return response;
+    },
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ['work-orders'] });
+      toast.success(response.message);
+    },
+    onError: (error: ApiError) => {
+      toast.error(error.message || 'Error al eliminar repuesto');
     },
   });
 }

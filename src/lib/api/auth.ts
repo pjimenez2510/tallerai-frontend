@@ -1,9 +1,11 @@
 import { apiClient } from './client';
 import type {
   AuthResponse,
+  ChangePasswordRequest,
   LoginRequest,
   MeResponse,
   RegisterRequest,
+  UpdateProfileRequest,
 } from '@/types/auth.types';
 
 export const authApi = {
@@ -25,5 +27,13 @@ export const authApi = {
 
   getMe() {
     return apiClient.get<MeResponse>('/auth/me');
+  },
+
+  updateProfile(data: UpdateProfileRequest) {
+    return apiClient.patch<MeResponse>('/auth/profile', data);
+  },
+
+  changePassword(data: ChangePasswordRequest) {
+    return apiClient.patch<null>('/auth/password', data);
   },
 };

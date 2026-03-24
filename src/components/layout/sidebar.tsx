@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   Wrench,
   Users,
@@ -10,6 +10,8 @@ import {
   ClipboardList,
   Kanban,
   UserCog,
+  Receipt,
+  UserCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth.store';
@@ -45,6 +47,12 @@ const navItems = [
     icon: Package,
     color: 'text-amber-400',
   },
+  {
+    href: '/services',
+    label: 'Servicios',
+    icon: Receipt,
+    color: 'text-teal-400',
+  },
 ];
 
 const adminItems = [
@@ -56,8 +64,16 @@ const adminItems = [
   },
 ];
 
+const profileItem = {
+  href: '/profile',
+  label: 'Mi Perfil',
+  icon: UserCircle,
+  color: 'text-sky-400',
+};
+
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const tenant = useAuthStore((s) => s.tenant);
   const isAdmin = user?.role === 'admin' || user?.role === 'jefe_taller';
@@ -132,6 +148,46 @@ export function Sidebar() {
           );
         })}
 
+        {/* Profile link */}
+        <p className="px-3 pt-6 pb-2 text-[10px] font-semibold text-white/30 uppercase tracking-widest">
+          Cuenta
+        </p>
+        {(() => {
+          const item = profileItem;
+          const isActive = pathname.startsWith(item.href);
+          return (
+            <Link
+              href={item.href}
+              className={cn(
+                'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200',
+                isActive
+                  ? 'bg-white/10 text-white shadow-sm'
+                  : 'text-white/50 hover:bg-white/5 hover:text-white/80',
+              )}
+            >
+              <div
+                className={cn(
+                  'flex h-8 w-8 items-center justify-center rounded-lg transition-all duration-200',
+                  isActive
+                    ? 'bg-white/10 shadow-inner'
+                    : 'bg-transparent group-hover:bg-white/5',
+                )}
+              >
+                <item.icon
+                  className={cn(
+                    'h-4 w-4 transition-colors',
+                    isActive ? item.color : 'text-white/40 group-hover:text-white/60',
+                  )}
+                />
+              </div>
+              {item.label}
+              {isActive && (
+                <div className="ml-auto h-1.5 w-1.5 rounded-full bg-[#f97316]" />
+              )}
+            </Link>
+          );
+        })()}
+
         {isAdmin && (
           <>
             <p className="px-3 pt-6 pb-2 text-[10px] font-semibold text-white/30 uppercase tracking-widest">
@@ -180,9 +236,12 @@ export function Sidebar() {
 
       {/* User info at bottom */}
       {user && (
-        <div className="mx-3 mb-3 rounded-xl bg-white/5 border border-white/5 px-4 py-3">
+        <button
+          onClick={() => router.push('/profile')}
+          className="mx-3 mb-3 rounded-xl bg-white/5 border border-white/5 px-4 py-3 hover:bg-white/10 transition-colors w-[calc(100%-1.5rem)] text-left"
+        >
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#2563eb] to-[#1e3a5f] text-xs font-bold text-white uppercase">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#2563eb] to-[#1e3a5f] text-xs font-bold text-white uppercase shrink-0">
               {user.name.charAt(0)}
             </div>
             <div className="min-w-0">
@@ -192,7 +251,7 @@ export function Sidebar() {
               <p className="text-xs text-white/40 truncate">{user.email}</p>
             </div>
           </div>
-        </div>
+        </button>
       )}
     </aside>
   );

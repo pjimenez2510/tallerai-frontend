@@ -1,16 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import {
   Search,
   Plus,
   Pencil,
-  UserX,
-  Phone,
-  Mail,
-  FileText,
+  Trash2,
+  Receipt,
+  DollarSign,
 } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -31,51 +30,49 @@ import {
   AlertDialogFooter,
   AlertDialogCancel,
 } from '@/components/ui/alert-dialog';
-import { ClientFormDialog } from './client-form-dialog';
-import { useClients, useDeactivateClient } from '@/hooks/use-clients';
-import type { Client } from '@/types/client.types';
+import { ServiceFormDialog } from './service-form-dialog';
+import { useServices, useDeactivateService } from '@/hooks/use-services';
+import type { Service } from '@/types/service.types';
 
-const docTypeLabels: Record<string, string> = {
-  cedula: 'Cédula',
-  ruc: 'RUC',
-  pasaporte: 'Pasaporte',
-};
-
-export function ClientsTable() {
-  const router = useRouter();
-  const { data: clients, isLoading } = useClients();
-  const deactivateClient = useDeactivateClient();
+export function ServicesTable() {
+  const { data: services, isLoading } = useServices();
+  const deactivateService = useDeactivateService();
 
   const [search, setSearch] = useState('');
   const [formOpen, setFormOpen] = useState(false);
-  const [editingClient, setEditingClient] = useState<Client | null>(null);
-  const [deletingClient, setDeletingClient] = useState<Client | null>(null);
+  const [editingService, setEditingService] = useState<Service | null>(null);
+  const [deletingService, setDeletingService] = useState<Service | null>(null);
 
-  const filtered = clients?.filter((c) => {
+  const filtered = services?.filter((s) => {
     if (!search) return true;
     const q = search.toLowerCase();
     return (
-      c.name.toLowerCase().includes(q) ||
-      c.documentNumber.toLowerCase().includes(q) ||
-      (c.phone?.toLowerCase().includes(q) ?? false) ||
-      (c.email?.toLowerCase().includes(q) ?? false)
+      s.code.toLowerCase().includes(q) ||
+      s.name.toLowerCase().includes(q) ||
+      (s.description?.toLowerCase().includes(q) ?? false)
     );
   });
 
-  function handleEdit(client: Client) {
-    setEditingClient(client);
+  const totalServices = services?.length ?? 0;
+  const avgPrice =
+    totalServices > 0
+      ? (services?.reduce((sum, s) => sum + s.price, 0) ?? 0) / totalServices
+      : 0;
+
+  function handleEdit(service: Service) {
+    setEditingService(service);
     setFormOpen(true);
   }
 
   function handleNew() {
-    setEditingClient(null);
+    setEditingService(null);
     setFormOpen(true);
   }
 
   async function handleDeactivate() {
-    if (!deletingClient) return;
-    await deactivateClient.mutateAsync(deletingClient.id);
-    setDeletingClient(null);
+    if (!deletingService) return;
+    await deactivateService.mutateAsync(deletingService.id);
+    setDeletingService(null);
   }
 
   if (isLoading) {
@@ -93,7 +90,7 @@ export function ClientsTable() {
         <div className="relative w-full sm:w-80">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-text-secondary)]" />
           <Input
-            placeholder="Buscar por nombre, cédula, teléfono..."
+            placeholder="Buscar por código, nombre..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="h-10 pl-10 rounded-xl"
@@ -105,7 +102,7 @@ export function ClientsTable() {
           size="lg"
         >
           <Plus className="h-4 w-4 mr-2" />
-          Nuevo Cliente
+          Nuevo Servicio
         </Button>
       </div>
 
@@ -113,18 +110,18 @@ export function ClientsTable() {
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
           <p className="text-2xl font-bold text-[var(--color-text-primary)]">
-            {clients?.length ?? 0}
+            {totalServices}
           </p>
           <p className="text-xs text-[var(--color-text-secondary)] mt-1">
-            Clientes activos
+            Servicios activos
           </p>
         </div>
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
-          <p className="text-2xl font-bold text-[var(--color-text-primary)]">
-            {clients?.filter((c) => c.email).length ?? 0}
+          <p className="text-2xl font-bold text-[#10b981]">
+            ${avgPrice.toFixed(2)}
           </p>
           <p className="text-xs text-[var(--color-text-secondary)] mt-1">
-            Con email registrado
+            Precio promedio
           </p>
         </div>
         <div className="hidden sm:block rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
@@ -142,16 +139,11 @@ export function ClientsTable() {
         <Table>
           <TableHeader>
             <TableRow className="bg-[var(--color-bg-secondary)] hover:bg-[var(--color-bg-secondary)]">
-              <TableHead className="font-semibold">Cliente</TableHead>
+              <TableHead className="font-semibold">Servicio</TableHead>
               <TableHead className="font-semibold hidden md:table-cell">
-                Documento
+                Descripción
               </TableHead>
-              <TableHead className="font-semibold hidden lg:table-cell">
-                Contacto
-              </TableHead>
-              <TableHead className="font-semibold hidden xl:table-cell">
-                Dirección
-              </TableHead>
+              <TableHead className="font-semibold">Precio</TableHead>
               <TableHead className="font-semibold text-right">
                 Acciones
               </TableHead>
@@ -159,68 +151,42 @@ export function ClientsTable() {
           </TableHeader>
           <TableBody>
             {filtered && filtered.length > 0 ? (
-              filtered.map((client) => (
+              filtered.map((service) => (
                 <TableRow
-                  key={client.id}
+                  key={service.id}
                   className="group cursor-pointer hover:bg-[var(--color-bg-secondary)]/50"
-                  onClick={() => router.push(`/clients/${client.id}`)}
+                  onClick={() => handleEdit(service)}
                 >
                   <TableCell>
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#1e3a5f] to-[#2563eb] text-sm font-bold text-white uppercase shrink-0">
-                        {client.name.charAt(0)}
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-[#1e3a5f] to-[#2563eb] text-white shrink-0">
+                        <Receipt className="h-5 w-5" />
                       </div>
                       <div className="min-w-0">
-                        <p className="font-medium text-[var(--color-text-primary)] truncate">
-                          {client.name}
-                        </p>
-                        <p className="text-xs text-[var(--color-text-secondary)] md:hidden">
-                          {docTypeLabels[client.documentType]}:{' '}
-                          {client.documentNumber}
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            variant="outline"
+                            className="font-mono text-[10px] font-bold"
+                          >
+                            {service.code}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-[var(--color-text-primary)] font-medium mt-0.5 truncate max-w-[200px]">
+                          {service.name}
                         </p>
                       </div>
                     </div>
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
-                    <div className="flex items-center gap-2">
-                      <Badge
-                        variant="secondary"
-                        className="text-[10px] font-medium"
-                      >
-                        {docTypeLabels[client.documentType]}
-                      </Badge>
-                      <span className="text-sm font-mono text-[var(--color-text-secondary)]">
-                        {client.documentNumber}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell">
-                    <div className="space-y-1">
-                      {client.phone && (
-                        <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)]">
-                          <Phone className="h-3 w-3" />
-                          {client.phone}
-                        </div>
-                      )}
-                      {client.email && (
-                        <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)]">
-                          <Mail className="h-3 w-3" />
-                          <span className="truncate max-w-[180px]">
-                            {client.email}
-                          </span>
-                        </div>
-                      )}
-                      {!client.phone && !client.email && (
-                        <span className="text-xs text-[var(--color-text-secondary)]/50">
-                          Sin contacto
-                        </span>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="hidden xl:table-cell">
-                    <span className="text-sm text-[var(--color-text-secondary)] truncate max-w-[200px] block">
-                      {client.address || '—'}
+                    <span className="text-sm text-[var(--color-text-secondary)] truncate max-w-[250px] block">
+                      {service.description || '—'}
                     </span>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1 text-sm font-medium text-[#10b981]">
+                      <DollarSign className="h-3.5 w-3.5" />
+                      {service.price.toFixed(2)}
+                    </div>
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -229,7 +195,7 @@ export function ClientsTable() {
                         size="icon-sm"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleEdit(client);
+                          handleEdit(service);
                         }}
                         className="text-[var(--color-text-secondary)] hover:text-[var(--color-secondary)]"
                       >
@@ -240,11 +206,11 @@ export function ClientsTable() {
                         size="icon-sm"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setDeletingClient(client);
+                          setDeletingService(service);
                         }}
                         className="text-[var(--color-text-secondary)] hover:text-[var(--color-error)]"
                       >
-                        <UserX className="h-3.5 w-3.5" />
+                        <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     </div>
                   </TableCell>
@@ -252,12 +218,12 @@ export function ClientsTable() {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-12">
-                  <FileText className="h-10 w-10 mx-auto text-[var(--color-text-secondary)]/30 mb-3" />
+                <TableCell colSpan={4} className="text-center py-12">
+                  <Receipt className="h-10 w-10 mx-auto text-[var(--color-text-secondary)]/30 mb-3" />
                   <p className="text-sm text-[var(--color-text-secondary)]">
                     {search
-                      ? 'No se encontraron clientes con esa búsqueda'
-                      : 'Aún no hay clientes registrados'}
+                      ? 'No se encontraron servicios con esa búsqueda'
+                      : 'Aún no hay servicios registrados'}
                   </p>
                   {!search && (
                     <Button
@@ -265,7 +231,7 @@ export function ClientsTable() {
                       onClick={handleNew}
                       className="mt-2 text-[#f97316]"
                     >
-                      Registra tu primer cliente
+                      Agrega tu primer servicio
                     </Button>
                   )}
                 </TableCell>
@@ -276,25 +242,25 @@ export function ClientsTable() {
       </div>
 
       {/* Form Dialog */}
-      <ClientFormDialog
+      <ServiceFormDialog
         open={formOpen}
         onOpenChange={setFormOpen}
-        client={editingClient}
+        service={editingService}
       />
 
       {/* Deactivate Confirmation */}
       <AlertDialog
-        open={!!deletingClient}
-        onOpenChange={(open) => !open && setDeletingClient(null)}
+        open={!!deletingService}
+        onOpenChange={(open) => !open && setDeletingService(null)}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Desactivar cliente?</AlertDialogTitle>
+            <AlertDialogTitle>¿Eliminar servicio?</AlertDialogTitle>
             <AlertDialogDescription>
-              El cliente{' '}
-              <span className="font-semibold">{deletingClient?.name}</span> será
-              desactivado. No se eliminará su historial y podrá reactivarse
-              después.
+              El servicio{' '}
+              <span className="font-semibold">{deletingService?.name}</span>{' '}
+              <span className="font-mono">({deletingService?.code})</span> será
+              desactivado. Podrá reactivarse después.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -305,7 +271,7 @@ export function ClientsTable() {
               onClick={handleDeactivate}
               className="rounded-xl bg-[var(--color-error)] text-white hover:bg-[var(--color-error)]/90"
             >
-              Desactivar
+              Eliminar
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
