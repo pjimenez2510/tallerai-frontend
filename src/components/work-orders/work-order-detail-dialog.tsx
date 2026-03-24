@@ -18,7 +18,13 @@ import {
   Plus,
   Package,
   DollarSign,
+  QrCode,
+  Copy,
+  PenLine,
+  Check,
 } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
+import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -41,6 +47,7 @@ import {
 } from '@/hooks/use-work-orders';
 import { useProducts } from '@/hooks/use-products';
 import type { WorkOrder, WorkOrderStatus } from '@/types/work-order.types';
+import { SignatureDialog } from './signature-dialog';
 
 const statusConfig: Record<
   WorkOrderStatus,
@@ -71,7 +78,7 @@ const nextStatusLabel: Partial<Record<WorkOrderStatus, string>> = {
   completado: 'Marcar Entregado',
 };
 
-type TabType = 'detalle' | 'tareas' | 'repuestos';
+type TabType = 'detalle' | 'tareas' | 'repuestos' | 'qr';
 
 const addTaskSchema = z.object({
   description: z.string().min(1, 'La descripción es requerida').max(500),
@@ -108,6 +115,7 @@ export function WorkOrderDetailDialog({
   const workOrder = liveWorkOrder ?? initialWorkOrder;
 
   const [productSearch, setProductSearch] = useState('');
+  const [signatureOpen, setSignatureOpen] = useState(false);
 
   const taskForm = useForm<AddTaskFormData>({
     resolver: zodResolver(addTaskSchema),
@@ -204,18 +212,24 @@ export function WorkOrderDetailDialog({
         </DialogHeader>
 
         {/* Tabs */}
-        <div className="flex border-b border-[var(--color-border)] -mx-6 px-6 gap-1 mt-1">
-          {(['detalle', 'tareas', 'repuestos'] as TabType[]).map((tab) => (
+        <div className="flex border-b border-[var(--color-border)] -mx-6 px-6 gap-1 mt-1 overflow-x-auto">
+          {(['detalle', 'tareas', 'repuestos', 'qr'] as TabType[]).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors capitalize ${
+              className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                 activeTab === tab
                   ? 'border-[#1e3a5f] text-[#1e3a5f]'
                   : 'border-transparent text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
               }`}
             >
-              {tab === 'detalle' ? 'Detalle' : tab === 'tareas' ? 'Tareas' : 'Repuestos'}
+              {tab === 'detalle'
+                ? 'Detalle'
+                : tab === 'tareas'
+                  ? 'Tareas'
+                  : tab === 'repuestos'
+                    ? 'Repuestos'
+                    : 'QR'}
               {tab === 'tareas' && workOrder.tasks.length > 0 && (
                 <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-[#1e3a5f]/10 text-[10px] font-bold text-[#1e3a5f] px-1">
                   {workOrder.tasks.length}
@@ -240,6 +254,7 @@ export function WorkOrderDetailDialog({
               onAdvance={handleAdvanceStatus}
               onCancel={handleCancel}
               isPending={updateWorkOrder.isPending}
+              onOpenSignature={() => setSignatureOpen(true)}
             />
           )}
           {activeTab === 'tareas' && (
@@ -265,8 +280,15 @@ export function WorkOrderDetailDialog({
               selectedProduct={selectedProduct}
             />
           )}
+          {activeTab === 'qr' && <QrTab workOrder={workOrder} />}
         </div>
       </DialogContent>
+
+      <SignatureDialog
+        workOrderId={workOrder.id}
+        open={signatureOpen}
+        onClose={() => setSignatureOpen(false)}
+      />
     </Dialog>
   );
 }
@@ -278,6 +300,7 @@ function DetailTab({
   onAdvance,
   onCancel,
   isPending,
+  onOpenSignature,
 }: {
   workOrder: WorkOrder;
   next?: WorkOrderStatus;
@@ -285,6 +308,7 @@ function DetailTab({
   onAdvance: () => void;
   onCancel: () => void;
   isPending: boolean;
+  onOpenSignature: () => void;
 }) {
   return (
     <div className="space-y-5">
@@ -366,6 +390,47 @@ function DetailTab({
             Completada:{' '}
             {new Date(workOrder.completedDate).toLocaleDateString('es-EC')}
           </div>
+        )}
+      </div>
+
+      {/* Client Signature */}
+      <div className="rounded-xl bg-[var(--color-bg-secondary)] p-4">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2 text-xs font-medium text-[var(--color-text-secondary)]">
+            <PenLine className="h-3.5 w-3.5" />
+            Firma del cliente
+          </div>
+          {!workOrder.clientSignature && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={onOpenSignature}
+              className="h-7 rounded-lg text-xs border-[var(--color-border)]"
+            >
+              <PenLine className="h-3 w-3 mr-1" />
+              Firmar
+            </Button>
+          )}
+          {workOrder.clientSignature && (
+            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700 bg-emerald-100 rounded-full px-2 py-0.5">
+              <Check className="h-3 w-3" />
+              Firmado
+            </span>
+          )}
+        </div>
+        {workOrder.clientSignature ? (
+          <div className="rounded-lg border border-[var(--color-border)] bg-white overflow-hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={workOrder.clientSignature}
+              alt="Firma del cliente"
+              className="w-full max-h-32 object-contain"
+            />
+          </div>
+        ) : (
+          <p className="text-xs text-[var(--color-text-secondary)]">
+            Sin firma — el cliente no ha firmado aún
+          </p>
         )}
       </div>
 
@@ -674,6 +739,75 @@ function PartsTab({
           </div>
         </div>
       </form>
+    </div>
+  );
+}
+
+function QrTab({ workOrder }: { workOrder: WorkOrder }) {
+  const trackingUrl =
+    typeof window !== 'undefined'
+      ? `${window.location.origin}/track/${workOrder.orderNumber}`
+      : `/track/${workOrder.orderNumber}`;
+
+  async function handleCopyLink() {
+    try {
+      await navigator.clipboard.writeText(trackingUrl);
+      toast.success('Enlace copiado al portapapeles');
+    } catch {
+      toast.error('No se pudo copiar el enlace');
+    }
+  }
+
+  return (
+    <div className="flex flex-col items-center gap-6 py-4">
+      <div className="flex flex-col items-center gap-2">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1e3a5f]/10">
+          <QrCode className="h-5 w-5 text-[#1e3a5f]" />
+        </div>
+        <p className="text-sm font-semibold text-[var(--color-text-primary)]">
+          Código QR de seguimiento
+        </p>
+        <p className="text-xs text-[var(--color-text-secondary)] text-center max-w-xs">
+          El cliente puede escanear este código para ver el estado de su vehículo en tiempo real.
+        </p>
+      </div>
+
+      {/* QR Code */}
+      <div className="rounded-2xl bg-white border-2 border-[var(--color-border)] p-4 shadow-sm">
+        <QRCodeSVG
+          value={trackingUrl}
+          size={200}
+          bgColor="#ffffff"
+          fgColor="#1e3a5f"
+          level="M"
+          includeMargin={false}
+        />
+      </div>
+
+      {/* Order number */}
+      <div className="text-center">
+        <p className="text-xs text-[var(--color-text-secondary)] mb-1">Número de orden</p>
+        <p className="text-xl font-bold font-mono text-[var(--color-text-primary)]">
+          {workOrder.orderNumber}
+        </p>
+      </div>
+
+      {/* Copy link button */}
+      <div className="flex gap-2 w-full max-w-xs">
+        <Button
+          onClick={handleCopyLink}
+          variant="outline"
+          className="flex-1 rounded-xl border-[var(--color-border)] gap-2"
+        >
+          <Copy className="h-4 w-4" />
+          Copiar enlace
+        </Button>
+      </div>
+
+      {/* URL preview */}
+      <p className="text-[10px] text-[var(--color-text-secondary)] font-mono text-center break-all max-w-xs px-2">
+        {trackingUrl}
+      </p>
     </div>
   );
 }

@@ -1,5 +1,10 @@
-import { redirect } from 'next/navigation';
+import type { Metadata } from 'next';
+import { DashboardContent } from '@/components/dashboard/dashboard-content';
+
+export const metadata: Metadata = {
+  title: 'Dashboard',
+};
 
 export default function DashboardIndexPage() {
-  redirect('/work-orders');
+  return <DashboardContent />;
 }
