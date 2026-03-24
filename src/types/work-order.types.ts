@@ -70,6 +70,7 @@ export interface WorkOrder {
   total: number;
   tasks: WorkOrderTask[];
   parts: WorkOrderPart[];
+  clientSignature: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -92,4 +93,5 @@ export interface UpdateWorkOrderRequest {
   internalNotes?: string;
   assignedTo?: string | null;
   estimatedDate?: string | null;
+  clientSignature?: string | null;
 }

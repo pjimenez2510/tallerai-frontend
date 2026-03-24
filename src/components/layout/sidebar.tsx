@@ -13,11 +13,18 @@ import {
   Receipt,
   UserCircle,
   ShoppingCart,
+  LayoutDashboard,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth.store';
 
 const navItems = [
+  {
+    href: '/',
+    label: 'Dashboard',
+    icon: LayoutDashboard,
+    color: 'text-[#f97316]',
+  },
   {
     href: '/work-orders',
     label: 'Órdenes de Trabajo',
@@ -120,7 +127,10 @@ export function Sidebar() {
           Principal
         </p>
         {navItems.map((item) => {
-          const isActive = pathname.startsWith(item.href);
+          const isActive =
+            item.href === '/'
+              ? pathname === '/'
+              : pathname.startsWith(item.href);
           return (
             <Link
               key={item.href}
