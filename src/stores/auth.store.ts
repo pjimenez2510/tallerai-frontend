@@ -22,8 +22,6 @@ interface AuthState {
   setTokens: (accessToken: string, refreshToken: string) => void;
 
   logout: () => void;
-
-  setHasHydrated: (value: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -56,8 +54,6 @@ export const useAuthStore = create<AuthState>()(
           refreshToken: null,
           isAuthenticated: false,
         }),
-
-      setHasHydrated: (value) => set({ hasHydrated: value }),
     }),
     {
       name: 'tallerai-auth',
@@ -68,9 +64,19 @@ export const useAuthStore = create<AuthState>()(
         refreshToken: state.refreshToken,
         isAuthenticated: state.isAuthenticated,
       }),
-      onRehydrateStorage: () => () => {
-        useAuthStore.getState().setHasHydrated(true);
-      },
     },
   ),
 );
+
+// Initialize hydration listener on client side only
+if (typeof window !== 'undefined') {
+  const unsub = useAuthStore.persist.onFinishHydration(() => {
+    useAuthStore.setState({ hasHydrated: true });
+    unsub();
+  });
+
+  // If already hydrated synchronously
+  if (useAuthStore.persist.hasHydrated()) {
+    useAuthStore.setState({ hasHydrated: true });
+  }
+}
