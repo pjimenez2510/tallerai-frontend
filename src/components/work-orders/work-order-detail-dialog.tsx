@@ -349,11 +349,18 @@ function DetailTab({
         </div>
       )}
 
-      <div className="flex items-center gap-4 text-xs text-[var(--color-text-secondary)]">
+      <div className="flex flex-wrap items-center gap-4 text-xs text-[var(--color-text-secondary)]">
         <div className="flex items-center gap-1">
           <Calendar className="h-3 w-3" />
           Creada: {new Date(workOrder.createdAt).toLocaleDateString('es-EC')}
         </div>
+        {workOrder.estimatedDate && (
+          <div className="flex items-center gap-1 text-amber-600 font-medium">
+            <Calendar className="h-3 w-3" />
+            Entrega estimada:{' '}
+            {new Date(workOrder.estimatedDate).toLocaleDateString('es-EC')}
+          </div>
+        )}
         {workOrder.completedDate && (
           <div className="flex items-center gap-1">
             Completada:{' '}

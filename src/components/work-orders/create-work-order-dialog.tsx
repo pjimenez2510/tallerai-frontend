@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ClipboardList, FileText, Gauge, Users } from 'lucide-react';
+import { ClipboardList, FileText, Gauge, Users, Calendar } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -70,6 +70,7 @@ export function CreateWorkOrderDialog({
       priority: 'normal',
       mileageIn: undefined,
       assignedTo: '',
+      estimatedDate: '',
     },
   });
 
@@ -112,6 +113,7 @@ export function CreateWorkOrderDialog({
         priority: 'normal',
         mileageIn: undefined,
         assignedTo: '',
+        estimatedDate: '',
       });
       setSelectedClientId('');
     }
@@ -127,6 +129,7 @@ export function CreateWorkOrderDialog({
       ...data,
       mileageIn: data.mileageIn || undefined,
       assignedTo: data.assignedTo || undefined,
+      estimatedDate: data.estimatedDate || undefined,
     };
 
     await createWorkOrder.mutateAsync(payload);
@@ -255,6 +258,24 @@ export function CreateWorkOrderDialog({
                   {...register('mileageIn', { valueAsNumber: true })}
                 />
               </div>
+            </div>
+          </div>
+
+          {/* Estimated date */}
+          <div className="space-y-1.5">
+            <Label className="text-xs">
+              Fecha estimada de entrega{' '}
+              <span className="text-[var(--color-text-secondary)] font-normal">
+                (opcional)
+              </span>
+            </Label>
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-text-secondary)]" />
+              <Input
+                type="date"
+                className="h-10 pl-10 rounded-xl"
+                {...register('estimatedDate')}
+              />
             </div>
           </div>
 
