@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/dialog';
 import { vehicleSchema, type VehicleFormData } from '@/lib/validations/vehicle';
 import { useCreateVehicle, useUpdateVehicle } from '@/hooks/use-vehicles';
-import { useClients } from '@/hooks/use-clients';
+import { ClientCombobox } from '@/components/shared/client-combobox';
 import type { Vehicle } from '@/types/vehicle.types';
 
 interface VehicleFormDialogProps {
@@ -44,12 +44,13 @@ export function VehicleFormDialog({
   const isEditing = !!vehicle;
   const createVehicle = useCreateVehicle();
   const updateVehicle = useUpdateVehicle();
-  const { data: clients } = useClients();
 
   const {
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<VehicleFormData>({
     resolver: zodResolver(vehicleSchema),
@@ -140,22 +141,11 @@ export function VehicleFormDialog({
           {/* Client selector */}
           <div className="space-y-1.5">
             <Label className="text-xs">Propietario</Label>
-            <select
-              className="h-10 w-full rounded-xl border border-input bg-transparent px-3 text-sm focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-              {...register('clientId')}
-            >
-              <option value="">Seleccionar cliente...</option>
-              {clients?.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name} — {c.documentNumber}
-                </option>
-              ))}
-            </select>
-            {errors.clientId && (
-              <p className="text-xs text-[var(--color-error)]">
-                {errors.clientId.message}
-              </p>
-            )}
+            <ClientCombobox
+              value={watch('clientId')}
+              onChange={(val) => setValue('clientId', val, { shouldValidate: true })}
+              error={errors.clientId?.message}
+            />
           </div>
 
           {/* Plate + Year */}
