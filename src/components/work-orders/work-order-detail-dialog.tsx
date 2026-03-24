@@ -193,7 +193,7 @@ export function WorkOrderDetailDialog({
     <Dialog open={!!initialWorkOrder} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center justify-between pr-8">
+          <div className="flex items-center gap-3">
             <DialogTitle className="text-lg font-bold">
               {workOrder.orderNumber}
             </DialogTitle>
