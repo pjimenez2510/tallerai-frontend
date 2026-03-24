@@ -125,13 +125,13 @@ export function InventoryTable() {
             )}
           </div>
 
-          {report.categories.length > 0 && (
+          {report.categorySummary.length > 0 && (
             <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
               <p className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider mb-3">
                 Categorías
               </p>
               <div className="flex flex-wrap gap-2">
-                {report.categories.map((cat) => (
+                {report.categorySummary.map((cat) => (
                   <span
                     key={cat.category}
                     className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-secondary)] px-3 py-1 text-xs font-medium text-[var(--color-text-primary)]"

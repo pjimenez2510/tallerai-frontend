@@ -54,7 +54,7 @@ export interface InventoryReport {
   totalProducts: number;
   totalValue: number;
   lowStockCount: number;
-  categories: { category: string; count: number }[];
+  categorySummary: { category: string; count: number; value: number }[];
 }
 
 export interface UpdateProductRequest {
