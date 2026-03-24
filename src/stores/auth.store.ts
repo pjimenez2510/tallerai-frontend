@@ -10,6 +10,7 @@ interface AuthState {
   accessToken: string | null;
   refreshToken: string | null;
   isAuthenticated: boolean;
+  hasHydrated: boolean;
 
   setAuth: (data: {
     user: AuthUser;
@@ -21,6 +22,8 @@ interface AuthState {
   setTokens: (accessToken: string, refreshToken: string) => void;
 
   logout: () => void;
+
+  setHasHydrated: (value: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -31,6 +34,7 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       refreshToken: null,
       isAuthenticated: false,
+      hasHydrated: false,
 
       setAuth: ({ user, tenant, accessToken, refreshToken }) =>
         set({
@@ -52,6 +56,8 @@ export const useAuthStore = create<AuthState>()(
           refreshToken: null,
           isAuthenticated: false,
         }),
+
+      setHasHydrated: (value) => set({ hasHydrated: value }),
     }),
     {
       name: 'tallerai-auth',
@@ -62,6 +68,9 @@ export const useAuthStore = create<AuthState>()(
         refreshToken: state.refreshToken,
         isAuthenticated: state.isAuthenticated,
       }),
+      onRehydrateStorage: () => () => {
+        useAuthStore.getState().setHasHydrated(true);
+      },
     },
   ),
 );
