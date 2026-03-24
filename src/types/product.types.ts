@@ -35,6 +35,21 @@ export interface CreateProductRequest {
   supplier?: string;
 }
 
+export interface StockMovement {
+  id: string;
+  type: 'ingreso' | 'salida' | 'ajuste';
+  quantity: number;
+  notes: string | null;
+  createdAt: string;
+  createdBy: string;
+}
+
+export interface AddStockMovementRequest {
+  type: 'ingreso' | 'salida' | 'ajuste';
+  quantity: number;
+  notes?: string;
+}
+
 export interface UpdateProductRequest {
   code?: string;
   oemCode?: string;

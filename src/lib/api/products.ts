@@ -3,6 +3,8 @@ import type {
   Product,
   CreateProductRequest,
   UpdateProductRequest,
+  StockMovement,
+  AddStockMovementRequest,
 } from '@/types/product.types';
 
 export const productsApi = {
@@ -32,5 +34,13 @@ export const productsApi = {
 
   deactivate(id: string) {
     return apiClient.delete<Product>(`/products/${id}`);
+  },
+
+  addStockMovement(id: string, data: AddStockMovementRequest) {
+    return apiClient.post<Product>(`/products/${id}/stock`, data);
+  },
+
+  getMovements(id: string) {
+    return apiClient.get<StockMovement[]>(`/products/${id}/movements`);
   },
 };

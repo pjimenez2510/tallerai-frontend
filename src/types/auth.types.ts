@@ -50,3 +50,14 @@ export interface MeResponse {
   tenantId: string;
   tenantName: string;
 }
+
+export interface UpdateProfileRequest {
+  name?: string;
+  phone?: string;
+  avatarUrl?: string;
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}

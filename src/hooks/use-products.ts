@@ -6,6 +6,7 @@ import { productsApi } from '@/lib/api/products';
 import type {
   CreateProductRequest,
   UpdateProductRequest,
+  AddStockMovementRequest,
 } from '@/types/product.types';
 import { ApiError } from '@/types/api.types';
 
@@ -85,6 +86,41 @@ export function useDeactivateProduct() {
     },
     onError: (error: ApiError) => {
       toast.error(error.message || 'Error al desactivar producto');
+    },
+  });
+}
+
+export function useProductMovements(id: string) {
+  return useQuery({
+    queryKey: ['products', id, 'movements'],
+    queryFn: async () => {
+      const response = await productsApi.getMovements(id);
+      return response.data;
+    },
+    enabled: !!id,
+  });
+}
+
+export function useAddStockMovement() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: AddStockMovementRequest;
+    }) => {
+      const response = await productsApi.addStockMovement(id, data);
+      return response;
+    },
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      toast.success(response.message);
+    },
+    onError: (error: ApiError) => {
+      toast.error(error.message || 'Error al registrar movimiento de stock');
     },
   });
 }

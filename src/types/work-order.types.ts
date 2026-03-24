@@ -18,6 +18,34 @@ export interface WorkOrderTask {
   sortOrder: number;
 }
 
+export interface WorkOrderPart {
+  id: string;
+  productId: string;
+  productName: string;
+  productCode: string;
+  quantity: number;
+  unitPrice: number;
+  total: number;
+}
+
+export interface AddTaskRequest {
+  description: string;
+  laborHours?: number;
+  laborCost?: number;
+}
+
+export interface UpdateTaskRequest {
+  isCompleted?: boolean;
+  description?: string;
+  laborHours?: number;
+  laborCost?: number;
+}
+
+export interface AddPartRequest {
+  productId: string;
+  quantity: number;
+}
+
 export interface WorkOrder {
   id: string;
   orderNumber: string;
@@ -41,6 +69,7 @@ export interface WorkOrder {
   totalLabor: number;
   total: number;
   tasks: WorkOrderTask[];
+  parts: WorkOrderPart[];
   createdAt: string;
   updatedAt: string;
 }
