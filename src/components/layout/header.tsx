@@ -1,12 +1,13 @@
 'use client';
 
 import { useRouter, usePathname } from 'next/navigation';
-import { LogOut, Bell, Search } from 'lucide-react';
+import { LogOut, Search } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NotificationCenter } from '@/components/notifications/notification-center';
 import { useAuthStore } from '@/stores/auth.store';
 import { authApi } from '@/lib/api/auth';
 
@@ -17,6 +18,8 @@ const pageNames: Record<string, string> = {
   '/vehicles': 'Vehículos',
   '/inventory': 'Inventario',
   '/users': 'Usuarios',
+  '/settings': 'Configuración',
+  '/reports': 'Reportes',
 };
 
 const roleLabels: Record<string, string> = {
@@ -77,16 +80,7 @@ export function Header() {
 
       {/* Right side */}
       <div className="flex items-center gap-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative text-[var(--color-text-secondary)]"
-        >
-          <Bell className="h-4 w-4" />
-          <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#f97316] text-[10px] font-bold text-white">
-            3
-          </span>
-        </Button>
+        <NotificationCenter />
 
         {/* User badge */}
         {user && (
