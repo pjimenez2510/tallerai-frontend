@@ -46,6 +46,12 @@ export interface AddPartRequest {
   quantity: number;
 }
 
+export interface WorkOrderSupplement {
+  id: string;
+  orderNumber: string;
+  status: WorkOrderStatus;
+}
+
 export interface WorkOrder {
   id: string;
   orderNumber: string;
@@ -71,8 +77,32 @@ export interface WorkOrder {
   tasks: WorkOrderTask[];
   parts: WorkOrderPart[];
   clientSignature: string | null;
+  parentId: string | null;
+  supplements: WorkOrderSupplement[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface CreateSupplementRequest {
+  description: string;
+  priority?: WorkOrderPriority;
+}
+
+export interface VehicleTimelineEntry {
+  id: string;
+  orderNumber: string;
+  status: WorkOrderStatus;
+  priority: WorkOrderPriority;
+  description: string;
+  mechanicName: string | null;
+  mileageIn: number | null;
+  totalParts: number;
+  totalLabor: number;
+  total: number;
+  tasksCount: number;
+  partsCount: number;
+  createdAt: string;
+  completedDate: string | null;
 }
 
 export interface CreateWorkOrderRequest {
@@ -83,6 +113,7 @@ export interface CreateWorkOrderRequest {
   mileageIn?: number;
   assignedTo?: string;
   estimatedDate?: string;
+  parentId?: string;
 }
 
 export interface UpdateWorkOrderRequest {

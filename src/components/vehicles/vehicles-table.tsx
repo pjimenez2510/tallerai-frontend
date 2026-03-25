@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Search,
   Plus,
@@ -9,6 +10,7 @@ import {
   Gauge,
   Fuel,
   User,
+  History,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -36,6 +38,7 @@ import { useVehicles, useDeactivateVehicle } from '@/hooks/use-vehicles';
 import type { Vehicle } from '@/types/vehicle.types';
 
 export function VehiclesTable() {
+  const router = useRouter();
   const { data: vehicles, isLoading } = useVehicles();
   const deactivateVehicle = useDeactivateVehicle();
 
@@ -156,7 +159,7 @@ export function VehiclesTable() {
                 <TableRow
                   key={vehicle.id}
                   className="group cursor-pointer hover:bg-[var(--color-bg-secondary)]/50"
-                  onClick={() => handleEdit(vehicle)}
+                  onClick={() => router.push(`/vehicles/${vehicle.id}`)}
                 >
                   <TableCell>
                     <div className="flex items-center gap-3">
@@ -232,6 +235,18 @@ export function VehiclesTable() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(`/vehicles/${vehicle.id}`);
+                        }}
+                        className="text-[var(--color-text-secondary)] hover:text-[#1e3a5f]"
+                        title="Ver historial"
+                      >
+                        <History className="h-3.5 w-3.5" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon-sm"

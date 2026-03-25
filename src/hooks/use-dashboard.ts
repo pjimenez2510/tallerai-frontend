@@ -12,3 +12,13 @@ export function useDashboardMetrics() {
     },
   });
 }
+
+export function useProductivity() {
+  return useQuery({
+    queryKey: ['dashboard', 'productivity'],
+    queryFn: async () => {
+      const response = await dashboardApi.getProductivity();
+      return response.data;
+    },
+  });
+}

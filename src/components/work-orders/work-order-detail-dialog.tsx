@@ -24,6 +24,7 @@ import {
   Check,
   FileText,
   Printer,
+  GitBranch,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { toast } from 'sonner';
@@ -51,6 +52,7 @@ import {
 import { useProducts } from '@/hooks/use-products';
 import type { WorkOrder, WorkOrderStatus, QuoteResponse } from '@/types/work-order.types';
 import { SignatureDialog } from './signature-dialog';
+import { SupplementDialog } from './supplement-dialog';
 
 const statusConfig: Record<
   WorkOrderStatus,
@@ -119,6 +121,7 @@ export function WorkOrderDetailDialog({
 
   const [productSearch, setProductSearch] = useState('');
   const [signatureOpen, setSignatureOpen] = useState(false);
+  const [supplementOpen, setSupplementOpen] = useState(false);
 
   const { data: quote, isLoading: quoteLoading } = useWorkOrderQuote(
     initialWorkOrder?.id ?? '',
@@ -265,6 +268,7 @@ export function WorkOrderDetailDialog({
               onCancel={handleCancel}
               isPending={updateWorkOrder.isPending}
               onOpenSignature={() => setSignatureOpen(true)}
+              onOpenSupplement={() => setSupplementOpen(true)}
             />
           )}
           {activeTab === 'tareas' && (
@@ -302,6 +306,13 @@ export function WorkOrderDetailDialog({
         open={signatureOpen}
         onClose={() => setSignatureOpen(false)}
       />
+
+      <SupplementDialog
+        parentId={workOrder.id}
+        parentOrderNumber={workOrder.orderNumber}
+        open={supplementOpen}
+        onClose={() => setSupplementOpen(false)}
+      />
     </Dialog>
   );
 }
@@ -314,6 +325,7 @@ function DetailTab({
   onCancel,
   isPending,
   onOpenSignature,
+  onOpenSupplement,
 }: {
   workOrder: WorkOrder;
   next?: WorkOrderStatus;
@@ -322,6 +334,7 @@ function DetailTab({
   onCancel: () => void;
   isPending: boolean;
   onOpenSignature: () => void;
+  onOpenSupplement: () => void;
 }) {
   return (
     <div className="space-y-5">
@@ -447,28 +460,69 @@ function DetailTab({
         )}
       </div>
 
-      <div className="flex items-center gap-2 pt-2 border-t border-[var(--color-border)]">
-        {next && nextLabel && (
-          <Button
-            onClick={onAdvance}
-            className="flex-1 rounded-xl bg-[#1e3a5f] text-white hover:bg-[#162d4a]"
-            disabled={isPending}
-          >
-            {nextLabel}
-            <ChevronRight className="h-4 w-4 ml-1" />
-          </Button>
-        )}
-        {!['entregado', 'cancelado'].includes(workOrder.status) && (
+      {/* Linked supplements */}
+      {workOrder.supplements && workOrder.supplements.length > 0 && (
+        <div className="rounded-xl bg-[var(--color-bg-secondary)] p-3">
+          <div className="flex items-center gap-2 text-xs font-medium text-[var(--color-text-secondary)] mb-2">
+            <GitBranch className="h-3.5 w-3.5" />
+            OTs Suplementarias ({workOrder.supplements.length})
+          </div>
+          <div className="space-y-1.5">
+            {workOrder.supplements.map((supp) => {
+              const suppStatus = statusConfig[supp.status];
+              return (
+                <div
+                  key={supp.id}
+                  className="flex items-center gap-2 rounded-lg bg-[var(--color-bg)] border border-[var(--color-border)] px-3 py-2"
+                >
+                  <span className="font-mono text-xs font-bold text-[#1e3a5f]">
+                    {supp.orderNumber}
+                  </span>
+                  <Badge className={`${suppStatus.bg} ${suppStatus.color} hover:${suppStatus.bg} text-xs`}>
+                    {suppStatus.label}
+                  </Badge>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-col gap-2 pt-2 border-t border-[var(--color-border)]">
+        {/* Supplement button — only for en_progreso or completado */}
+        {(workOrder.status === 'en_progreso' || workOrder.status === 'completado') && (
           <Button
             variant="outline"
-            onClick={onCancel}
-            className="rounded-xl text-[var(--color-error)] border-[var(--color-error)]/30 hover:bg-red-50"
-            disabled={isPending}
+            onClick={onOpenSupplement}
+            className="w-full rounded-xl border-amber-300 text-amber-700 hover:bg-amber-50"
           >
-            <XIcon className="h-4 w-4 mr-1" />
-            Cancelar OT
+            <GitBranch className="h-4 w-4 mr-2" />
+            Crear OT Suplementaria
           </Button>
         )}
+        <div className="flex items-center gap-2">
+          {next && nextLabel && (
+            <Button
+              onClick={onAdvance}
+              className="flex-1 rounded-xl bg-[#1e3a5f] text-white hover:bg-[#162d4a]"
+              disabled={isPending}
+            >
+              {nextLabel}
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          )}
+          {!['entregado', 'cancelado'].includes(workOrder.status) && (
+            <Button
+              variant="outline"
+              onClick={onCancel}
+              className="rounded-xl text-[var(--color-error)] border-[var(--color-error)]/30 hover:bg-red-50"
+              disabled={isPending}
+            >
+              <XIcon className="h-4 w-4 mr-1" />
+              Cancelar OT
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

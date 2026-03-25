@@ -22,6 +22,7 @@ import {
 } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { useDashboardMetrics } from '@/hooks/use-dashboard';
+import { ProductivitySection } from './productivity-section';
 
 const STATUS_COLORS: Record<string, string> = {
   recepcion: '#64748b',
@@ -267,6 +268,9 @@ export function DashboardContent() {
           )}
         </div>
       </div>
+
+      {/* Productivity */}
+      <ProductivitySection />
 
       {/* Chart + Quick actions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
