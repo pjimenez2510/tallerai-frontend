@@ -52,18 +52,24 @@ export function ProductivitySection() {
           ) : (
             <div className="flex items-end gap-2 mt-1">
               <p className="text-2xl font-bold text-[var(--color-text-primary)]">
-                {productivity?.thisMonthCount ?? 0}
+                {productivity?.workOrdersThisMonth ?? 0}
               </p>
-              {productivity && (
+              {productivity && productivity.workOrdersLastMonth > 0 && (
                 <div className="mb-0.5">
-                  <ChangeIndicator percent={productivity.changePercent} />
+                  <ChangeIndicator
+                    percent={
+                      ((productivity.workOrdersThisMonth - productivity.workOrdersLastMonth) /
+                        productivity.workOrdersLastMonth) *
+                      100
+                    }
+                  />
                 </div>
               )}
             </div>
           )}
           {!isLoading && productivity && (
             <p className="text-xs text-[var(--color-text-secondary)] mt-1">
-              vs {productivity.lastMonthCount} el mes pasado
+              vs {productivity.workOrdersLastMonth} el mes pasado
             </p>
           )}
         </div>

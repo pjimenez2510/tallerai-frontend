@@ -4,11 +4,11 @@ export interface MonthlyWorkOrderCount {
 }
 
 export interface ProductivityMetrics {
-  monthlyTrend: MonthlyWorkOrderCount[];
   avgCompletionDays: number;
-  thisMonthCount: number;
-  lastMonthCount: number;
-  changePercent: number;
+  workOrdersThisMonth: number;
+  workOrdersLastMonth: number;
+  monthlyTrend: MonthlyWorkOrderCount[];
+  statusDistribution: { status: string; count: number }[];
 }
 
 export interface WorkOrdersByStatus {
