@@ -10,6 +10,8 @@ import type {
   UpdateTaskRequest,
   AddPartRequest,
   QuoteResponse,
+  VehicleTimelineEntry,
+  CreateSupplementRequest,
 } from '@/types/work-order.types';
 
 export const workOrdersApi = {
@@ -60,5 +62,13 @@ export const workOrdersApi = {
 
   getQuote(id: string) {
     return apiClient.get<QuoteResponse>(`/work-orders/${id}/quote`);
+  },
+
+  getVehicleTimeline(vehicleId: string) {
+    return apiClient.get<VehicleTimelineEntry[]>(`/work-orders/by-vehicle/${vehicleId}/timeline`);
+  },
+
+  createSupplement(parentId: string, data: CreateSupplementRequest) {
+    return apiClient.post<WorkOrder>(`/work-orders/${parentId}/supplement`, data);
   },
 };
