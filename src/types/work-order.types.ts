@@ -95,3 +95,56 @@ export interface UpdateWorkOrderRequest {
   estimatedDate?: string | null;
   clientSignature?: string | null;
 }
+
+export interface QuoteTask {
+  id: string;
+  description: string;
+  laborCost: number;
+}
+
+export interface QuotePart {
+  id: string;
+  productCode: string;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  total: number;
+}
+
+export interface QuoteTenant {
+  name: string;
+  ruc: string;
+  phone: string | null;
+  address: string | null;
+}
+
+export interface QuoteClient {
+  name: string;
+  document: string | null;
+  phone: string | null;
+  email: string | null;
+}
+
+export interface QuoteVehicle {
+  plate: string;
+  brand: string;
+  model: string;
+  year: number | null;
+  color: string | null;
+  mileage: number | null;
+}
+
+export interface QuoteResponse {
+  orderNumber: string;
+  createdAt: string;
+  tenant: QuoteTenant;
+  client: QuoteClient;
+  vehicle: QuoteVehicle;
+  tasks: QuoteTask[];
+  parts: QuotePart[];
+  subtotalParts: number;
+  subtotalLabor: number;
+  subtotal: number;
+  iva: number;
+  total: number;
+}

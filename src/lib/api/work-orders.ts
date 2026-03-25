@@ -9,6 +9,7 @@ import type {
   AddTaskRequest,
   UpdateTaskRequest,
   AddPartRequest,
+  QuoteResponse,
 } from '@/types/work-order.types';
 
 export const workOrdersApi = {
@@ -55,5 +56,9 @@ export const workOrdersApi = {
 
   listByVehicle(vehicleId: string) {
     return apiClient.get<WorkOrder[]>(`/work-orders/by-vehicle/${vehicleId}`);
+  },
+
+  getQuote(id: string) {
+    return apiClient.get<QuoteResponse>(`/work-orders/${id}/quote`);
   },
 };
