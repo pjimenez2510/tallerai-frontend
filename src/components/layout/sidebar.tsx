@@ -14,6 +14,7 @@ import {
   UserCircle,
   ShoppingCart,
   LayoutDashboard,
+  HardHat,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth.store';
@@ -91,6 +92,7 @@ export function Sidebar() {
   const user = useAuthStore((s) => s.user);
   const tenant = useAuthStore((s) => s.tenant);
   const isAdmin = user?.role === 'admin' || user?.role === 'jefe_taller';
+  const isMechanic = user?.role === 'mecanico';
 
   return (
     <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 bg-gradient-to-b from-[#1e3a5f] to-[#0f1f33] border-r border-white/5">
@@ -164,6 +166,49 @@ export function Sidebar() {
             </Link>
           );
         })}
+
+        {/* Mechanic shortcut */}
+        {isMechanic && (
+          <>
+            <p className="px-3 pt-6 pb-2 text-[10px] font-semibold text-white/30 uppercase tracking-widest">
+              Mecánico
+            </p>
+            {(() => {
+              const isActive = pathname.startsWith('/mechanic');
+              return (
+                <Link
+                  href="/mechanic"
+                  className={cn(
+                    'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200',
+                    isActive
+                      ? 'bg-white/10 text-white shadow-sm'
+                      : 'text-white/50 hover:bg-white/5 hover:text-white/80',
+                  )}
+                >
+                  <div
+                    className={cn(
+                      'flex h-8 w-8 items-center justify-center rounded-lg transition-all duration-200',
+                      isActive
+                        ? 'bg-white/10 shadow-inner'
+                        : 'bg-transparent group-hover:bg-white/5',
+                    )}
+                  >
+                    <HardHat
+                      className={cn(
+                        'h-4 w-4 transition-colors',
+                        isActive ? 'text-[#f97316]' : 'text-white/40 group-hover:text-white/60',
+                      )}
+                    />
+                  </div>
+                  Mi Trabajo
+                  {isActive && (
+                    <div className="ml-auto h-1.5 w-1.5 rounded-full bg-[#f97316]" />
+                  )}
+                </Link>
+              );
+            })()}
+          </>
+        )}
 
         {/* Profile link */}
         <p className="px-3 pt-6 pb-2 text-[10px] font-semibold text-white/30 uppercase tracking-widest">

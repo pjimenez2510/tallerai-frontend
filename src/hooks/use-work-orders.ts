@@ -178,6 +178,17 @@ export function useWorkOrdersByVehicle(vehicleId: string) {
   });
 }
 
+export function useWorkOrderQuote(id: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ['work-orders', id, 'quote'],
+    queryFn: async () => {
+      const response = await workOrdersApi.getQuote(id);
+      return response.data;
+    },
+    enabled: !!id && enabled,
+  });
+}
+
 export function useRemovePart() {
   const queryClient = useQueryClient();
 

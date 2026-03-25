@@ -8,6 +8,19 @@ export interface WorkOrdersByStatus {
   cancelado: number;
 }
 
+export interface RecentWorkOrderItem {
+  orderNumber: string;
+  clientName: string;
+  vehiclePlate: string;
+  status: string;
+  createdAt: string;
+}
+
+export interface TopMechanicItem {
+  name: string;
+  completedCount: number;
+}
+
 export interface DashboardMetrics {
   workOrders: {
     total: number;
@@ -30,4 +43,6 @@ export interface DashboardMetrics {
     totalLabor: number;
     total: number;
   };
+  recentWorkOrders: RecentWorkOrderItem[];
+  topMechanics: TopMechanicItem[];
 }
