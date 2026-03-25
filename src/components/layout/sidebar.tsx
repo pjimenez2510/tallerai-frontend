@@ -15,6 +15,8 @@ import {
   ShoppingCart,
   LayoutDashboard,
   HardHat,
+  Settings,
+  BarChart3,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth.store';
@@ -76,6 +78,18 @@ const adminItems = [
     label: 'Usuarios',
     icon: UserCog,
     color: 'text-rose-400',
+  },
+  {
+    href: '/reports',
+    label: 'Reportes',
+    icon: BarChart3,
+    color: 'text-violet-400',
+  },
+  {
+    href: '/settings',
+    label: 'Configuración',
+    icon: Settings,
+    color: 'text-slate-400',
   },
 ];
 
