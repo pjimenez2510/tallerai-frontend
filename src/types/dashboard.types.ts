@@ -1,3 +1,16 @@
+export interface MonthlyWorkOrderCount {
+  month: string;
+  count: number;
+}
+
+export interface ProductivityMetrics {
+  monthlyTrend: MonthlyWorkOrderCount[];
+  avgCompletionDays: number;
+  thisMonthCount: number;
+  lastMonthCount: number;
+  changePercent: number;
+}
+
 export interface WorkOrdersByStatus {
   recepcion: number;
   diagnostico: number;
