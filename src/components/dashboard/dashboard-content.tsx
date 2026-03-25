@@ -9,6 +9,8 @@ import {
   Plus,
   Car,
   TrendingUp,
+  Wrench,
+  Trophy,
 } from 'lucide-react';
 import {
   PieChart,
@@ -136,6 +138,134 @@ export function DashboardContent() {
           borderColor="border-l-[#f97316]"
           loading={isLoading}
         />
+      </div>
+
+      {/* Recent OTs + Top Mechanics */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Recent Work Orders */}
+        <div className="lg:col-span-2 rounded-xl bg-[var(--color-bg)] border border-[var(--color-border)] p-6 shadow-[var(--shadow-card)]">
+          <div className="flex items-center gap-2 mb-4">
+            <ClipboardList className="h-4 w-4 text-[#1e3a5f]" />
+            <h2 className="text-sm font-semibold text-[var(--color-text-primary)]">
+              Órdenes Recientes
+            </h2>
+          </div>
+          {isLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="h-10 rounded-lg bg-[var(--color-bg-secondary)] animate-pulse" />
+              ))}
+            </div>
+          ) : !metrics?.recentWorkOrders || metrics.recentWorkOrders.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 text-[var(--color-text-secondary)]">
+              <ClipboardList className="h-8 w-8 mb-2 opacity-30" />
+              <p className="text-sm">No hay órdenes recientes</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-[var(--color-border)]">
+                    <th className="text-left pb-2 text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
+                      N° OT
+                    </th>
+                    <th className="text-left pb-2 text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
+                      Cliente
+                    </th>
+                    <th className="text-left pb-2 text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
+                      Placa
+                    </th>
+                    <th className="text-left pb-2 text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider hidden sm:table-cell">
+                      Estado
+                    </th>
+                    <th className="text-left pb-2 text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider hidden md:table-cell">
+                      Fecha
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--color-border)]">
+                  {metrics.recentWorkOrders.map((wo) => (
+                    <tr key={wo.orderNumber} className="hover:bg-[var(--color-bg-secondary)] transition-colors">
+                      <td className="py-2.5 pr-4 font-mono text-xs font-semibold text-[#1e3a5f]">
+                        {wo.orderNumber}
+                      </td>
+                      <td className="py-2.5 pr-4 text-[var(--color-text-primary)] truncate max-w-[120px]">
+                        {wo.clientName}
+                      </td>
+                      <td className="py-2.5 pr-4 font-mono text-xs text-[var(--color-text-secondary)]">
+                        {wo.vehiclePlate}
+                      </td>
+                      <td className="py-2.5 pr-4 hidden sm:table-cell">
+                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${STATUS_COLORS[wo.status] ? 'bg-opacity-10' : ''}`}
+                          style={{
+                            backgroundColor: `${STATUS_COLORS[wo.status] ?? '#94a3b8'}22`,
+                            color: STATUS_COLORS[wo.status] ?? '#94a3b8',
+                          }}
+                        >
+                          {STATUS_LABELS[wo.status] ?? wo.status}
+                        </span>
+                      </td>
+                      <td className="py-2.5 text-xs text-[var(--color-text-secondary)] hidden md:table-cell whitespace-nowrap">
+                        {new Date(wo.createdAt).toLocaleDateString('es-EC')}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Top Mechanics */}
+        <div className="rounded-xl bg-[var(--color-bg)] border border-[var(--color-border)] p-6 shadow-[var(--shadow-card)]">
+          <div className="flex items-center gap-2 mb-4">
+            <Trophy className="h-4 w-4 text-[#f97316]" />
+            <h2 className="text-sm font-semibold text-[var(--color-text-primary)]">
+              Top Mecánicos
+            </h2>
+          </div>
+          {isLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-12 rounded-xl bg-[var(--color-bg-secondary)] animate-pulse" />
+              ))}
+            </div>
+          ) : !metrics?.topMechanics || metrics.topMechanics.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 text-[var(--color-text-secondary)]">
+              <Wrench className="h-8 w-8 mb-2 opacity-30" />
+              <p className="text-sm">Sin datos aún</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {metrics.topMechanics.slice(0, 3).map((mechanic, index) => (
+                <div
+                  key={mechanic.name}
+                  className="flex items-center gap-3 rounded-xl bg-[var(--color-bg-secondary)] px-3 py-2.5"
+                >
+                  <div
+                    className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold shrink-0 ${
+                      index === 0
+                        ? 'bg-[#f97316] text-white'
+                        : index === 1
+                          ? 'bg-slate-200 text-slate-700'
+                          : 'bg-amber-700/20 text-amber-700'
+                    }`}
+                  >
+                    {index + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-[var(--color-text-primary)] truncate">
+                      {mechanic.name}
+                    </p>
+                    <p className="text-xs text-[var(--color-text-secondary)]">
+                      {mechanic.completedCount} completadas
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Chart + Quick actions */}
