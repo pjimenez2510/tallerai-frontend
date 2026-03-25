@@ -111,35 +111,24 @@ export interface QuotePart {
   total: number;
 }
 
-export interface QuoteTenant {
-  name: string;
-  ruc: string;
-  phone: string | null;
-  address: string | null;
-}
-
-export interface QuoteClient {
-  name: string;
-  document: string | null;
-  phone: string | null;
-  email: string | null;
-}
-
-export interface QuoteVehicle {
-  plate: string;
-  brand: string;
-  model: string;
-  year: number | null;
-  color: string | null;
-  mileage: number | null;
-}
-
 export interface QuoteResponse {
   orderNumber: string;
-  createdAt: string;
-  tenant: QuoteTenant;
-  client: QuoteClient;
-  vehicle: QuoteVehicle;
+  date: string;
+  tenantName: string;
+  tenantRuc: string;
+  tenantPhone: string | null;
+  tenantAddress: string | null;
+  clientName: string;
+  clientDocument: string | null;
+  clientPhone: string | null;
+  clientEmail: string | null;
+  vehiclePlate: string;
+  vehicleBrand: string;
+  vehicleModel: string;
+  vehicleYear: number;
+  vehicleColor: string | null;
+  mileageIn: number | null;
+  description: string;
   tasks: QuoteTask[];
   parts: QuotePart[];
   subtotalParts: number;

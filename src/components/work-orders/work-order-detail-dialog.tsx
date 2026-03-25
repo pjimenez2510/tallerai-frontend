@@ -22,6 +22,8 @@ import {
   Copy,
   PenLine,
   Check,
+  FileText,
+  Printer,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { toast } from 'sonner';
@@ -44,9 +46,10 @@ import {
   useDeleteTask,
   useAddPart,
   useRemovePart,
+  useWorkOrderQuote,
 } from '@/hooks/use-work-orders';
 import { useProducts } from '@/hooks/use-products';
-import type { WorkOrder, WorkOrderStatus } from '@/types/work-order.types';
+import type { WorkOrder, WorkOrderStatus, QuoteResponse } from '@/types/work-order.types';
 import { SignatureDialog } from './signature-dialog';
 
 const statusConfig: Record<
@@ -78,7 +81,7 @@ const nextStatusLabel: Partial<Record<WorkOrderStatus, string>> = {
   completado: 'Marcar Entregado',
 };
 
-type TabType = 'detalle' | 'tareas' | 'repuestos' | 'qr';
+type TabType = 'detalle' | 'tareas' | 'repuestos' | 'qr' | 'cotizacion';
 
 const addTaskSchema = z.object({
   description: z.string().min(1, 'La descripción es requerida').max(500),
@@ -116,6 +119,11 @@ export function WorkOrderDetailDialog({
 
   const [productSearch, setProductSearch] = useState('');
   const [signatureOpen, setSignatureOpen] = useState(false);
+
+  const { data: quote, isLoading: quoteLoading } = useWorkOrderQuote(
+    initialWorkOrder?.id ?? '',
+    activeTab === 'cotizacion',
+  );
 
   const taskForm = useForm<AddTaskFormData>({
     resolver: zodResolver(addTaskSchema),
@@ -213,7 +221,7 @@ export function WorkOrderDetailDialog({
 
         {/* Tabs */}
         <div className="flex border-b border-[var(--color-border)] -mx-6 px-6 gap-1 mt-1 overflow-x-auto">
-          {(['detalle', 'tareas', 'repuestos', 'qr'] as TabType[]).map((tab) => (
+          {(['detalle', 'tareas', 'repuestos', 'qr', 'cotizacion'] as TabType[]).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -229,7 +237,9 @@ export function WorkOrderDetailDialog({
                   ? 'Tareas'
                   : tab === 'repuestos'
                     ? 'Repuestos'
-                    : 'QR'}
+                    : tab === 'qr'
+                      ? 'QR'
+                      : 'Cotización'}
               {tab === 'tareas' && workOrder.tasks.length > 0 && (
                 <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-[#1e3a5f]/10 text-[10px] font-bold text-[#1e3a5f] px-1">
                   {workOrder.tasks.length}
@@ -281,6 +291,9 @@ export function WorkOrderDetailDialog({
             />
           )}
           {activeTab === 'qr' && <QrTab workOrder={workOrder} />}
+          {activeTab === 'cotizacion' && (
+            <QuoteTab quote={quote ?? null} isLoading={quoteLoading} />
+          )}
         </div>
       </DialogContent>
 
@@ -739,6 +752,244 @@ function PartsTab({
           </div>
         </div>
       </form>
+    </div>
+  );
+}
+
+function QuoteTab({
+  quote,
+  isLoading,
+}: {
+  quote: QuoteResponse | null;
+  isLoading: boolean;
+}) {
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 gap-3">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#1e3a5f] border-t-transparent" />
+        <p className="text-sm text-[var(--color-text-secondary)]">Generando cotización...</p>
+      </div>
+    );
+  }
+
+  if (!quote) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 gap-3">
+        <FileText className="h-10 w-10 text-[var(--color-text-secondary)]/30" />
+        <p className="text-sm text-[var(--color-text-secondary)]">No hay cotización disponible</p>
+      </div>
+    );
+  }
+
+  const IVA_RATE = 0.12;
+
+  return (
+    <div className="space-y-4">
+      {/* Print button */}
+      <div className="flex justify-end print:hidden">
+        <Button
+          onClick={() => window.print()}
+          variant="outline"
+          size="sm"
+          className="rounded-xl border-[var(--color-border)] gap-2"
+        >
+          <Printer className="h-4 w-4" />
+          Imprimir
+        </Button>
+      </div>
+
+      {/* Quote document */}
+      <div className="rounded-xl border border-[var(--color-border)] overflow-hidden">
+        {/* Header */}
+        <div className="bg-[#1e3a5f] text-white px-5 py-4">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#f97316]">
+                  <Wrench className="h-3.5 w-3.5 text-white" />
+                </div>
+                <h2 className="text-base font-bold">{quote.tenantName}</h2>
+              </div>
+              {quote.tenantRuc && (
+                <p className="text-xs text-white/70">RUC: {quote.tenantRuc}</p>
+              )}
+              {quote.tenantPhone && (
+                <p className="text-xs text-white/70">Tel: {quote.tenantPhone}</p>
+              )}
+              {quote.tenantAddress && (
+                <p className="text-xs text-white/70">{quote.tenantAddress}</p>
+              )}
+            </div>
+            <div className="text-right shrink-0">
+              <p className="text-xs font-medium text-white/60 uppercase tracking-wider">Cotización</p>
+              <p className="text-sm font-bold font-mono">{quote.orderNumber}</p>
+              <p className="text-xs text-white/70">
+                {new Date(quote.date).toLocaleDateString('es-EC', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-5 space-y-4">
+          {/* Client + Vehicle */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="rounded-lg border border-[var(--color-border)] p-3">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-[#1e3a5f] mb-2 uppercase tracking-wider">
+                <User className="h-3 w-3" />
+                Cliente
+              </div>
+              <p className="text-sm font-medium">{quote.clientName}</p>
+              {quote.clientDocument && (
+                <p className="text-xs text-[var(--color-text-secondary)]">CI/RUC: {quote.clientDocument}</p>
+              )}
+              {quote.clientPhone && (
+                <p className="text-xs text-[var(--color-text-secondary)]">Tel: {quote.clientPhone}</p>
+              )}
+              {quote.clientEmail && (
+                <p className="text-xs text-[var(--color-text-secondary)] truncate">{quote.clientEmail}</p>
+              )}
+            </div>
+            <div className="rounded-lg border border-[var(--color-border)] p-3">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-[#1e3a5f] mb-2 uppercase tracking-wider">
+                <Car className="h-3 w-3" />
+                Vehículo
+              </div>
+              <p className="text-sm font-medium font-mono">{quote.vehiclePlate}</p>
+              <p className="text-xs text-[var(--color-text-secondary)]">
+                {[quote.vehicleBrand, quote.vehicleModel, quote.vehicleYear]
+                  .filter(Boolean)
+                  .join(' ')}
+              </p>
+              {quote.vehicleColor && (
+                <p className="text-xs text-[var(--color-text-secondary)]">Color: {quote.vehicleColor}</p>
+              )}
+              {quote.mileageIn != null && (
+                <p className="text-xs text-[var(--color-text-secondary)]">
+                  Km: {quote.mileageIn.toLocaleString()}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Tasks table */}
+          {quote.tasks.length > 0 && (
+            <div>
+              <h3 className="text-xs font-semibold text-[#1e3a5f] uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <Wrench className="h-3 w-3" />
+                Mano de Obra
+              </h3>
+              <table className="w-full text-sm border border-[var(--color-border)] rounded-lg overflow-hidden">
+                <thead>
+                  <tr className="bg-[var(--color-bg-secondary)]">
+                    <th className="text-left px-3 py-2 text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
+                      Descripción
+                    </th>
+                    <th className="text-right px-3 py-2 text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider w-24">
+                      Costo
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {quote.tasks.map((task, i) => (
+                    <tr
+                      key={task.id}
+                      className={i % 2 === 0 ? 'bg-[var(--color-bg)]' : 'bg-[var(--color-bg-secondary)]'}
+                    >
+                      <td className="px-3 py-2 text-[var(--color-text-primary)]">{task.description}</td>
+                      <td className="px-3 py-2 text-right font-mono text-[var(--color-text-primary)]">
+                        ${task.laborCost.toFixed(2)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Parts table */}
+          {quote.parts.length > 0 && (
+            <div>
+              <h3 className="text-xs font-semibold text-[#1e3a5f] uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <Package className="h-3 w-3" />
+                Repuestos
+              </h3>
+              <table className="w-full text-sm border border-[var(--color-border)] rounded-lg overflow-hidden">
+                <thead>
+                  <tr className="bg-[var(--color-bg-secondary)]">
+                    <th className="text-left px-3 py-2 text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider w-20">
+                      Código
+                    </th>
+                    <th className="text-left px-3 py-2 text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
+                      Descripción
+                    </th>
+                    <th className="text-right px-3 py-2 text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider w-12">
+                      Cant.
+                    </th>
+                    <th className="text-right px-3 py-2 text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider w-24">
+                      P. Unit.
+                    </th>
+                    <th className="text-right px-3 py-2 text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider w-24">
+                      Total
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {quote.parts.map((part, i) => (
+                    <tr
+                      key={part.id}
+                      className={i % 2 === 0 ? 'bg-[var(--color-bg)]' : 'bg-[var(--color-bg-secondary)]'}
+                    >
+                      <td className="px-3 py-2 font-mono text-xs text-[var(--color-text-secondary)]">
+                        {part.productCode}
+                      </td>
+                      <td className="px-3 py-2 text-[var(--color-text-primary)]">{part.productName}</td>
+                      <td className="px-3 py-2 text-right text-[var(--color-text-primary)]">{part.quantity}</td>
+                      <td className="px-3 py-2 text-right font-mono text-[var(--color-text-primary)]">
+                        ${part.unitPrice.toFixed(2)}
+                      </td>
+                      <td className="px-3 py-2 text-right font-mono font-medium text-[var(--color-text-primary)]">
+                        ${part.total.toFixed(2)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Totals */}
+          <div className="ml-auto max-w-xs rounded-lg border border-[var(--color-border)] overflow-hidden">
+            <div className="divide-y divide-[var(--color-border)]">
+              <div className="flex justify-between items-center px-4 py-2 bg-[var(--color-bg-secondary)]">
+                <span className="text-xs text-[var(--color-text-secondary)]">Subtotal Repuestos</span>
+                <span className="text-sm font-mono">${quote.subtotalParts.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center px-4 py-2 bg-[var(--color-bg-secondary)]">
+                <span className="text-xs text-[var(--color-text-secondary)]">Subtotal Mano de Obra</span>
+                <span className="text-sm font-mono">${quote.subtotalLabor.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center px-4 py-2 bg-[var(--color-bg-secondary)]">
+                <span className="text-xs text-[var(--color-text-secondary)]">Subtotal</span>
+                <span className="text-sm font-mono">${quote.subtotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center px-4 py-2 bg-[var(--color-bg-secondary)]">
+                <span className="text-xs text-[var(--color-text-secondary)]">IVA ({(IVA_RATE * 100).toFixed(0)}%)</span>
+                <span className="text-sm font-mono">${quote.iva.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center px-4 py-2.5 bg-[#1e3a5f]">
+                <span className="text-sm font-bold text-white">TOTAL</span>
+                <span className="text-base font-bold font-mono text-[#f97316]">
+                  ${quote.total.toFixed(2)}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
