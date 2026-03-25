@@ -2,7 +2,7 @@
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
   User,
   FileText,
@@ -16,13 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -55,6 +49,7 @@ export function ClientFormDialog({
   const isEditing = !!client;
   const createClient = useCreateClient();
   const updateClient = useUpdateClient();
+  const [docTypeOpen, setDocTypeOpen] = useState(false);
 
   const {
     register,
@@ -140,25 +135,35 @@ export function ClientFormDialog({
           <div className="grid grid-cols-[140px_1fr] gap-3">
             <div className="space-y-1.5">
               <Label className="text-xs">Tipo doc.</Label>
-              <Select
-                value={watch('documentType')}
-                onValueChange={(val) =>
-                  setValue('documentType', val as ClientFormData['documentType'], {
-                    shouldValidate: true,
-                  })
-                }
-              >
-                <SelectTrigger className="h-10 rounded-xl">
-                  <SelectValue placeholder="Tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {documentTypeOptions.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setDocTypeOpen(!docTypeOpen)}
+                  className="flex w-full items-center justify-between h-10 rounded-xl border border-input bg-transparent px-3 text-sm transition-colors hover:border-ring"
+                >
+                  {documentTypeOptions.find((o) => o.value === watch('documentType'))?.label ?? 'Tipo'}
+                </button>
+                {docTypeOpen && (
+                  <div className="absolute z-50 mt-1 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] shadow-lg p-1">
+                    {documentTypeOptions.map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => {
+                          setValue('documentType', opt.value as ClientFormData['documentType'], { shouldValidate: true });
+                          setDocTypeOpen(false);
+                        }}
+                        className={cn(
+                          'flex w-full rounded-lg px-3 py-2 text-sm transition-colors hover:bg-[var(--color-bg-secondary)]',
+                          watch('documentType') === opt.value && 'bg-[var(--color-bg-secondary)]',
+                        )}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Número</Label>

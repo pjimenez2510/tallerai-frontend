@@ -8,13 +8,7 @@ import { User, Mail, Lock, Phone, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -54,6 +48,7 @@ export function UserFormDialog({
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();
   const [showPassword, setShowPassword] = useState(false);
+  const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
 
   const {
     register,
@@ -197,32 +192,44 @@ export function UserFormDialog({
           {/* Role */}
           <div className="space-y-1.5">
             <Label className="text-xs">Rol</Label>
-            <Select
-              value={watch('role')}
-              onValueChange={(val) =>
-                setValue(
-                  'role',
-                  val as CreateUserFormData['role'],
-                  { shouldValidate: true },
-                )
-              }
-            >
-              <SelectTrigger className="h-10 rounded-xl">
-                <SelectValue placeholder="Seleccionar rol" />
-              </SelectTrigger>
-              <SelectContent>
-                {roleOptions.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    <div>
-                      <span className="font-medium">{opt.label}</span>
-                      <span className="ml-2 text-xs text-[var(--color-text-secondary)]">
-                        — {opt.description}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
+                className={cn(
+                  'flex w-full items-center justify-between h-10 rounded-xl border border-input bg-transparent px-3 text-sm transition-colors hover:border-ring',
+                  !watch('role') && 'text-muted-foreground',
+                )}
+              >
+                {roleOptions.find((r) => r.value === watch('role'))?.label ??
+                  'Seleccionar rol'}
+              </button>
+              {roleDropdownOpen && (
+                <div className="absolute z-50 mt-1 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] shadow-lg p-1 max-h-60 overflow-y-auto">
+                  {roleOptions.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => {
+                        setValue('role', opt.value as CreateUserFormData['role'], {
+                          shouldValidate: true,
+                        });
+                        setRoleDropdownOpen(false);
+                      }}
+                      className={cn(
+                        'flex w-full flex-col rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-[var(--color-bg-secondary)]',
+                        watch('role') === opt.value && 'bg-[var(--color-bg-secondary)]',
+                      )}
+                    >
+                      <span className="text-sm font-medium">{opt.label}</span>
+                      <span className="text-xs text-[var(--color-text-secondary)]">
+                        {opt.description}
                       </span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             {errors.role && (
               <p className="text-xs text-[var(--color-error)]">
                 {errors.role.message}
