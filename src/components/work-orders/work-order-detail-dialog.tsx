@@ -950,7 +950,7 @@ function QuoteTab({
                 <tbody>
                   {quote.tasks.map((task, i) => (
                     <tr
-                      key={task.id}
+                      key={`task-${i}`}
                       className={i % 2 === 0 ? 'bg-[var(--color-bg)]' : 'bg-[var(--color-bg-secondary)]'}
                     >
                       <td className="px-3 py-2 text-[var(--color-text-primary)]">{task.description}</td>
@@ -994,7 +994,7 @@ function QuoteTab({
                 <tbody>
                   {quote.parts.map((part, i) => (
                     <tr
-                      key={part.id}
+                      key={`part-${i}`}
                       className={i % 2 === 0 ? 'bg-[var(--color-bg)]' : 'bg-[var(--color-bg-secondary)]'}
                     >
                       <td className="px-3 py-2 font-mono text-xs text-[var(--color-text-secondary)]">
