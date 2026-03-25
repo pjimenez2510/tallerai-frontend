@@ -124,7 +124,7 @@ export function Sidebar() {
       )}
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-3 space-y-1 overflow-y-auto scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none]">
         <p className="px-3 pt-2 pb-2 text-[10px] font-semibold text-white/30 uppercase tracking-widest">
           Principal
         </p>
