@@ -10,6 +10,7 @@ import type {
   AddTaskRequest,
   UpdateTaskRequest,
   AddPartRequest,
+  CreateSupplementRequest,
 } from '@/types/work-order.types';
 import { ApiError } from '@/types/api.types';
 
@@ -186,6 +187,41 @@ export function useWorkOrderQuote(id: string, enabled: boolean) {
       return response.data;
     },
     enabled: !!id && enabled,
+  });
+}
+
+export function useVehicleTimeline(vehicleId: string) {
+  return useQuery({
+    queryKey: ['work-orders', 'timeline', vehicleId],
+    queryFn: async () => {
+      const response = await workOrdersApi.getVehicleTimeline(vehicleId);
+      return response.data;
+    },
+    enabled: !!vehicleId,
+  });
+}
+
+export function useCreateSupplement() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      parentId,
+      data,
+    }: {
+      parentId: string;
+      data: CreateSupplementRequest;
+    }) => {
+      const response = await workOrdersApi.createSupplement(parentId, data);
+      return response;
+    },
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ['work-orders'] });
+      toast.success(response.message);
+    },
+    onError: (error: ApiError) => {
+      toast.error(error.message || 'Error al crear OT suplementaria');
+    },
   });
 }
 

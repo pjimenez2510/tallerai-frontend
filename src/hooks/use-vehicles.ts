@@ -9,6 +9,17 @@ import type {
 } from '@/types/vehicle.types';
 import { ApiError } from '@/types/api.types';
 
+export function useVehicle(id: string) {
+  return useQuery({
+    queryKey: ['vehicles', id],
+    queryFn: async () => {
+      const response = await vehiclesApi.getById(id);
+      return response.data;
+    },
+    enabled: !!id,
+  });
+}
+
 export function useVehicles() {
   return useQuery({
     queryKey: ['vehicles'],
