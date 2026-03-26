@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -25,6 +25,8 @@ import {
   FileText,
   Printer,
   GitBranch,
+  ImageIcon,
+  Upload,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { toast } from 'sonner';
@@ -48,11 +50,15 @@ import {
   useAddPart,
   useRemovePart,
   useWorkOrderQuote,
+  useWorkOrderAttachments,
+  useAddAttachment,
+  useRemoveAttachment,
 } from '@/hooks/use-work-orders';
 import { useProducts } from '@/hooks/use-products';
-import type { WorkOrder, WorkOrderStatus, QuoteResponse } from '@/types/work-order.types';
+import type { WorkOrder, WorkOrderStatus, QuoteResponse, WorkOrderAttachment } from '@/types/work-order.types';
 import { SignatureDialog } from './signature-dialog';
 import { SupplementDialog } from './supplement-dialog';
+import { DamageMap } from './damage-map';
 
 const statusConfig: Record<
   WorkOrderStatus,
@@ -83,7 +89,7 @@ const nextStatusLabel: Partial<Record<WorkOrderStatus, string>> = {
   completado: 'Marcar Entregado',
 };
 
-type TabType = 'detalle' | 'tareas' | 'repuestos' | 'qr' | 'cotizacion';
+type TabType = 'detalle' | 'tareas' | 'repuestos' | 'qr' | 'cotizacion' | 'fotos' | 'danos';
 
 const addTaskSchema = z.object({
   description: z.string().min(1, 'La descripción es requerida').max(500),
@@ -113,7 +119,14 @@ export function WorkOrderDetailDialog({
   const deleteTask = useDeleteTask();
   const addPart = useAddPart();
   const removePart = useRemovePart();
+  const addAttachment = useAddAttachment();
+  const removeAttachment = useRemoveAttachment();
   const { data: products } = useProducts();
+  const { data: attachments, isLoading: loadingAttachments } = useWorkOrderAttachments(
+    initialWorkOrder?.id ?? '',
+  );
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [previewAttachment, setPreviewAttachment] = useState<WorkOrderAttachment | null>(null);
 
   // Fetch live data so tasks/parts update without closing the dialog
   const { data: liveWorkOrder } = useWorkOrder(initialWorkOrder?.id ?? '');
@@ -195,6 +208,40 @@ export function WorkOrderDetailDialog({
     await removePart.mutateAsync({ woId: workOrder!.id, partId });
   }
 
+  async function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !workOrder) return;
+    e.target.value = '';
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const dataUrl = reader.result as string;
+      // dataUrl is "data:<mimeType>;base64,<data>"
+      const base64 = dataUrl.split(',')[1];
+      await addAttachment.mutateAsync({
+        woId: workOrder.id,
+        data: {
+          filename: file.name,
+          mimeType: file.type,
+          data: base64,
+          description: undefined,
+        },
+      });
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function handleRemoveAttachment(attachmentId: string) {
+    await removeAttachment.mutateAsync({ woId: workOrder!.id, attachmentId });
+  }
+
+  async function handleSaveDamageMap(damageMap: string | null, damageNotes: string | null) {
+    await updateWorkOrder.mutateAsync({
+      id: workOrder!.id,
+      data: { damageMap, damageNotes },
+    });
+  }
+
   const filteredProducts = products?.filter((p) => {
     if (!productSearch) return true;
     const q = productSearch.toLowerCase();
@@ -224,7 +271,7 @@ export function WorkOrderDetailDialog({
 
         {/* Tabs */}
         <div className="flex border-b border-[var(--color-border)] -mx-6 px-6 gap-1 mt-1 overflow-x-auto">
-          {(['detalle', 'tareas', 'repuestos', 'qr', 'cotizacion'] as TabType[]).map((tab) => (
+          {(['detalle', 'tareas', 'repuestos', 'qr', 'cotizacion', 'fotos', 'danos'] as TabType[]).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -242,7 +289,11 @@ export function WorkOrderDetailDialog({
                     ? 'Repuestos'
                     : tab === 'qr'
                       ? 'QR'
-                      : 'Cotización'}
+                      : tab === 'cotizacion'
+                        ? 'Cotización'
+                        : tab === 'fotos'
+                          ? 'Fotos'
+                          : 'Daños'}
               {tab === 'tareas' && workOrder.tasks.length > 0 && (
                 <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-[#1e3a5f]/10 text-[10px] font-bold text-[#1e3a5f] px-1">
                   {workOrder.tasks.length}
@@ -298,6 +349,25 @@ export function WorkOrderDetailDialog({
           {activeTab === 'cotizacion' && (
             <QuoteTab quote={quote ?? null} isLoading={quoteLoading} />
           )}
+          {activeTab === 'fotos' && (
+            <AttachmentsTab
+              woId={workOrder.id}
+              attachments={attachments ?? []}
+              isLoading={loadingAttachments}
+              isUploading={addAttachment.isPending}
+              onUploadClick={() => fileInputRef.current?.click()}
+              onRemove={handleRemoveAttachment}
+              onPreview={setPreviewAttachment}
+            />
+          )}
+          {activeTab === 'danos' && (
+            <DamageMap
+              initialMap={workOrder.damageMap ?? null}
+              initialNotes={workOrder.damageNotes ?? null}
+              onSave={handleSaveDamageMap}
+              isSaving={updateWorkOrder.isPending}
+            />
+          )}
         </div>
       </DialogContent>
 
@@ -313,6 +383,32 @@ export function WorkOrderDetailDialog({
         open={supplementOpen}
         onClose={() => setSupplementOpen(false)}
       />
+
+      {/* Hidden file input for attachments */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*,application/pdf"
+        className="hidden"
+        onChange={handleFileSelected}
+      />
+
+      {/* Image preview dialog */}
+      {previewAttachment && previewAttachment.mimeType.startsWith('image/') && (
+        <Dialog open={!!previewAttachment} onOpenChange={(open) => !open && setPreviewAttachment(null)}>
+          <DialogContent className="sm:max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-sm truncate">{previewAttachment.filename}</DialogTitle>
+            </DialogHeader>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`data:${previewAttachment.mimeType};base64,${(previewAttachment as WorkOrderAttachment & { data?: string }).data ?? ''}`}
+              alt={previewAttachment.filename}
+              className="w-full rounded-xl object-contain max-h-[60vh]"
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </Dialog>
   );
 }
@@ -1113,6 +1209,123 @@ function QrTab({ workOrder }: { workOrder: WorkOrder }) {
       <p className="text-[10px] text-[var(--color-text-secondary)] font-mono text-center break-all max-w-xs px-2">
         {trackingUrl}
       </p>
+    </div>
+  );
+}
+
+function AttachmentsTab({
+  woId,
+  attachments,
+  isLoading,
+  isUploading,
+  onUploadClick,
+  onRemove,
+  onPreview,
+}: {
+  woId: string;
+  attachments: WorkOrderAttachment[];
+  isLoading: boolean;
+  isUploading: boolean;
+  onUploadClick: () => void;
+  onRemove: (id: string) => void;
+  onPreview: (a: WorkOrderAttachment) => void;
+}) {
+  // woId kept for interface consistency
+  void woId;
+
+  function formatSize(bytes: number) {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Upload button */}
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-[var(--color-text-secondary)]">
+          {attachments.length} archivo{attachments.length !== 1 ? 's' : ''}
+        </span>
+        <Button
+          size="sm"
+          onClick={onUploadClick}
+          disabled={isUploading}
+          className="rounded-xl bg-[#1e3a5f] text-white hover:bg-[#162d4a]"
+        >
+          {isUploading ? (
+            <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent mr-1.5" />
+          ) : (
+            <Upload className="h-3.5 w-3.5 mr-1.5" />
+          )}
+          Subir Archivo
+        </Button>
+      </div>
+
+      {isLoading ? (
+        <div className="grid grid-cols-3 gap-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="aspect-square rounded-xl bg-[var(--color-bg-secondary)] animate-pulse" />
+          ))}
+        </div>
+      ) : attachments.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 gap-3 rounded-xl border-2 border-dashed border-[var(--color-border)]">
+          <ImageIcon className="h-10 w-10 text-[var(--color-text-secondary)]/30" />
+          <div className="text-center">
+            <p className="text-sm text-[var(--color-text-secondary)]">Sin archivos adjuntos</p>
+            <p className="text-xs text-[var(--color-text-secondary)]/70 mt-0.5">
+              Sube fotos o PDFs de la orden
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-3 gap-3">
+          {attachments.map((att) => {
+            const isImage = att.mimeType.startsWith('image/');
+            return (
+              <div
+                key={att.id}
+                className="group relative rounded-xl border border-[var(--color-border)] overflow-hidden bg-[var(--color-bg-secondary)] aspect-square"
+              >
+                {/* Thumbnail or icon */}
+                <button
+                  className="absolute inset-0 w-full h-full flex flex-col items-center justify-center"
+                  onClick={() => isImage && onPreview(att)}
+                >
+                  {isImage ? (
+                    <div className="w-full h-full flex items-center justify-center bg-slate-100">
+                      <ImageIcon className="h-8 w-8 text-slate-400" />
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-1.5 p-2">
+                      <FileText className="h-8 w-8 text-red-400" />
+                      <span className="text-[10px] text-[var(--color-text-secondary)] text-center leading-tight truncate w-full px-1">
+                        {att.filename}
+                      </span>
+                    </div>
+                  )}
+                </button>
+
+                {/* Overlay on hover */}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all" />
+
+                {/* Delete button */}
+                <button
+                  onClick={() => onRemove(att.id)}
+                  className="absolute top-1.5 right-1.5 h-6 w-6 flex items-center justify-center rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                >
+                  <XIcon className="h-3 w-3" />
+                </button>
+
+                {/* File info */}
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent px-2 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <p className="text-[10px] text-white truncate leading-tight">{att.filename}</p>
+                  <p className="text-[9px] text-white/70">{formatSize(att.size)}</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
