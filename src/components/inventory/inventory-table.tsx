@@ -35,12 +35,18 @@ import {
 } from '@/components/ui/alert-dialog';
 import { ProductFormDialog } from './product-form-dialog';
 import { useProducts, useDeactivateProduct, useInventoryReport } from '@/hooks/use-products';
+import { usePermissions } from '@/hooks/use-permissions';
 import type { Product } from '@/types/product.types';
 
 export function InventoryTable() {
   const { data: products, isLoading } = useProducts();
   const { data: report } = useInventoryReport();
   const deactivateProduct = useDeactivateProduct();
+  const { hasPermission } = usePermissions();
+
+  const canCreate = hasPermission('inventory.create');
+  const canEdit = hasPermission('inventory.edit');
+  const canDelete = hasPermission('inventory.delete');
 
   const [search, setSearch] = useState('');
   const [formOpen, setFormOpen] = useState(false);
@@ -159,14 +165,16 @@ export function InventoryTable() {
             className="h-10 pl-10 rounded-xl"
           />
         </div>
-        <Button
-          onClick={handleNew}
-          className="rounded-xl bg-[#1e3a5f] text-white hover:bg-[#162d4a] shadow-md shadow-[#1e3a5f]/20"
-          size="lg"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Nuevo Producto
-        </Button>
+        {canCreate && (
+          <Button
+            onClick={handleNew}
+            className="rounded-xl bg-[#1e3a5f] text-white hover:bg-[#162d4a] shadow-md shadow-[#1e3a5f]/20"
+            size="lg"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Nuevo Producto
+          </Button>
+        )}
       </div>
 
       {/* Table */}
@@ -295,28 +303,32 @@ export function InventoryTable() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEdit(product);
-                        }}
-                        className="text-[var(--color-text-secondary)] hover:text-[var(--color-secondary)]"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeletingProduct(product);
-                        }}
-                        className="text-[var(--color-text-secondary)] hover:text-[var(--color-error)]"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
+                      {canEdit && (
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEdit(product);
+                          }}
+                          className="text-[var(--color-text-secondary)] hover:text-[var(--color-secondary)]"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                      {canDelete && (
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeletingProduct(product);
+                          }}
+                          className="text-[var(--color-text-secondary)] hover:text-[var(--color-error)]"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>

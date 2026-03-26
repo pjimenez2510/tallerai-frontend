@@ -7,12 +7,10 @@ import {
   Pencil,
   UserX,
   UserCheck,
-  Shield,
-  Wrench,
-  ClipboardList,
   UserCog,
   Mail,
   Phone,
+  Shield,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -42,24 +40,19 @@ import {
   useActivateUser,
 } from '@/hooks/use-users';
 import { useAuthStore } from '@/stores/auth.store';
+import { usePermissions } from '@/hooks/use-permissions';
 import type { WorkshopUser } from '@/types/user.types';
-import type { UserRole } from '@/types/auth.types';
-
-const roleConfig: Record<
-  UserRole,
-  { label: string; icon: typeof Shield; color: string }
-> = {
-  admin: { label: 'Administrador', icon: Shield, color: 'text-red-500 bg-red-50' },
-  jefe_taller: { label: 'Jefe de Taller', icon: UserCog, color: 'text-blue-600 bg-blue-50' },
-  recepcionista: { label: 'Recepcionista', icon: ClipboardList, color: 'text-emerald-600 bg-emerald-50' },
-  mecanico: { label: 'Mecánico', icon: Wrench, color: 'text-amber-600 bg-amber-50' },
-};
 
 export function UsersTable() {
   const { data: users, isLoading } = useUsers();
   const deactivateUser = useDeactivateUser();
   const activateUser = useActivateUser();
   const currentUser = useAuthStore((s) => s.user);
+  const { hasPermission } = usePermissions();
+
+  const canCreate = hasPermission('users.create');
+  const canEdit = hasPermission('users.edit');
+  const canDeactivate = hasPermission('users.delete');
 
   const [search, setSearch] = useState('');
   const [formOpen, setFormOpen] = useState(false);
@@ -73,7 +66,7 @@ export function UsersTable() {
     return (
       u.name.toLowerCase().includes(q) ||
       u.email.toLowerCase().includes(q) ||
-      roleConfig[u.role].label.toLowerCase().includes(q)
+      (u.roleName?.toLowerCase().includes(q) ?? false)
     );
   });
 
@@ -81,6 +74,7 @@ export function UsersTable() {
   const inactiveCount = users?.filter((u) => !u.isActive).length ?? 0;
 
   function handleEdit(user: WorkshopUser) {
+    if (!canEdit) return;
     setEditingUser(user);
     setFormOpen(true);
   }
@@ -121,14 +115,16 @@ export function UsersTable() {
             className="h-10 pl-10 rounded-xl"
           />
         </div>
-        <Button
-          onClick={handleNew}
-          className="rounded-xl bg-[#1e3a5f] text-white hover:bg-[#162d4a] shadow-md shadow-[#1e3a5f]/20"
-          size="lg"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Nuevo Usuario
-        </Button>
+        {canCreate && (
+          <Button
+            onClick={handleNew}
+            className="rounded-xl bg-[#1e3a5f] text-white hover:bg-[#162d4a] shadow-md shadow-[#1e3a5f]/20"
+            size="lg"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Nuevo Usuario
+          </Button>
+        )}
       </div>
 
       {/* Stats */}
@@ -190,8 +186,6 @@ export function UsersTable() {
           <TableBody>
             {filtered && filtered.length > 0 ? (
               filtered.map((user) => {
-                const role = roleConfig[user.role];
-                const RoleIcon = role.icon;
                 const isSelf = user.id === currentUser?.id;
 
                 return (
@@ -217,17 +211,15 @@ export function UsersTable() {
                             )}
                           </div>
                           <p className="text-xs text-[var(--color-text-secondary)] truncate md:hidden">
-                            {role.label}
+                            {user.roleName ?? user.role}
                           </p>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
-                      <div
-                        className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium ${role.color}`}
-                      >
-                        <RoleIcon className="h-3.5 w-3.5" />
-                        {role.label}
+                      <div className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium bg-[#1e3a5f]/10 text-[#1e3a5f]">
+                        <Shield className="h-3.5 w-3.5" />
+                        {user.roleName ?? user.role}
                       </div>
                     </TableCell>
                     <TableCell className="hidden lg:table-cell">
@@ -259,18 +251,20 @@ export function UsersTable() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEdit(user);
-                          }}
-                          className="text-[var(--color-text-secondary)] hover:text-[var(--color-secondary)]"
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        {!isSelf &&
+                        {canEdit && (
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEdit(user);
+                            }}
+                            className="text-[var(--color-text-secondary)] hover:text-[var(--color-secondary)]"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                        {canDeactivate && !isSelf &&
                           (user.isActive ? (
                             <Button
                               variant="ghost"
