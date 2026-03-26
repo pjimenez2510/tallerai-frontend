@@ -77,7 +77,7 @@ export interface WorkOrder {
   tasks: WorkOrderTask[];
   parts: WorkOrderPart[];
   clientSignature: string | null;
-  damageMap: string | null;
+  damageMap: Record<string, unknown> | null;
   damageNotes: string | null;
   parentId: string | null;
   supplements: WorkOrderSupplement[];
@@ -143,7 +143,7 @@ export interface UpdateWorkOrderRequest {
   assignedTo?: string | null;
   estimatedDate?: string | null;
   clientSignature?: string | null;
-  damageMap?: string | null;
+  damageMap?: Record<string, unknown> | null;
   damageNotes?: string | null;
 }
 

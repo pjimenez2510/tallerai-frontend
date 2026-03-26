@@ -1,425 +1,345 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { RotateCcw, Save } from 'lucide-react';
-import type { Canvas as FabricCanvas, FabricObject, RectProps, CircleProps, TextProps } from 'fabric';
+import { useState, useRef } from 'react';
+import {
+  CircleDot,
+  Trash2,
+  Save,
+  Plus,
+  AlertTriangle,
+} from 'lucide-react';
 
-interface DamageMapProps {
-  initialMap: string | null;
-  initialNotes: string | null;
-  onSave: (damageMap: string | null, damageNotes: string | null) => void;
-  isSaving: boolean;
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import { useUpdateWorkOrder } from '@/hooks/use-work-orders';
+
+const DEFAULT_VEHICLE_SVG = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 450" fill="none" stroke="#94a3b8" stroke-width="1.5">
+  <rect x="30" y="40" width="140" height="370" rx="40" fill="#f1f5f9" stroke="#94a3b8"/>
+  <rect x="45" y="60" width="110" height="60" rx="10" fill="#e2e8f0" stroke="#94a3b8"/>
+  <rect x="45" y="330" width="110" height="55" rx="10" fill="#e2e8f0" stroke="#94a3b8"/>
+  <rect x="20" y="90" width="15" height="60" rx="5" fill="#cbd5e1"/>
+  <rect x="165" y="90" width="15" height="60" rx="5" fill="#cbd5e1"/>
+  <rect x="20" y="300" width="15" height="60" rx="5" fill="#cbd5e1"/>
+  <rect x="165" y="300" width="15" height="60" rx="5" fill="#cbd5e1"/>
+  <circle cx="100" cy="210" r="3" fill="#94a3b8"/>
+  <line x1="60" y1="140" x2="140" y2="140" stroke="#cbd5e1"/>
+  <line x1="60" y1="310" x2="140" y2="310" stroke="#cbd5e1"/>
+  <text x="100" y="20" text-anchor="middle" fill="#94a3b8" font-size="12" font-family="sans-serif">FRENTE</text>
+  <text x="100" y="440" text-anchor="middle" fill="#94a3b8" font-size="12" font-family="sans-serif">ATRÁS</text>
+  <text x="8" y="220" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="sans-serif" transform="rotate(-90, 8, 220)">IZQUIERDA</text>
+  <text x="192" y="220" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="sans-serif" transform="rotate(90, 192, 220)">DERECHA</text>
+</svg>`)}`;
+
+interface DamageMarker {
+  id: string;
+  x: number;
+  y: number;
+  severity: 'leve' | 'moderado' | 'grave';
+  description: string;
 }
 
-type DamageColor = 'red' | 'yellow' | 'green';
+interface DamageMapData {
+  markers: DamageMarker[];
+  template: string;
+}
 
-const colorConfig: Record<DamageColor, { label: string; hex: string; stroke: string }> = {
-  red: { label: 'Grave', hex: '#ef4444', stroke: '#b91c1c' },
-  yellow: { label: 'Moderado', hex: '#eab308', stroke: '#a16207' },
-  green: { label: 'Leve', hex: '#22c55e', stroke: '#15803d' },
+const SEVERITY_CONFIG = {
+  leve: { label: 'Leve', color: 'bg-green-500', ring: 'ring-green-300', text: 'text-green-700', bg: 'bg-green-50' },
+  moderado: { label: 'Moderado', color: 'bg-yellow-500', ring: 'ring-yellow-300', text: 'text-yellow-700', bg: 'bg-yellow-50' },
+  grave: { label: 'Grave', color: 'bg-red-500', ring: 'ring-red-300', text: 'text-red-700', bg: 'bg-red-50' },
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type FabricModule = any;
-
-function drawCarOutline(canvas: FabricCanvas, fabric: FabricModule) {
-  const { Rect, Polygon, Line, Text } = fabric as {
-    Rect: new (opts: Partial<RectProps>) => FabricObject;
-    Polygon: new (points: { x: number; y: number }[], opts: unknown) => FabricObject;
-    Line: new (coords: number[], opts: unknown) => FabricObject;
-    Text: new (text: string, opts: Partial<TextProps>) => FabricObject;
-  };
-
-  // Car body (top-down view)
-  const body = new Rect({
-    left: 60,
-    top: 80,
-    width: 280,
-    height: 140,
-    fill: '#e2e8f0',
-    stroke: '#94a3b8',
-    strokeWidth: 2,
-    rx: 8,
-    ry: 8,
-    selectable: false,
-    evented: false,
-    excludeFromExport: true,
-  });
-
-  // Cabin / roof area
-  const roof = new Polygon(
-    [
-      { x: 120, y: 80 },
-      { x: 280, y: 80 },
-      { x: 310, y: 130 },
-      { x: 90, y: 130 },
-    ],
-    {
-      fill: '#cbd5e1',
-      stroke: '#94a3b8',
-      strokeWidth: 2,
-      selectable: false,
-      evented: false,
-      excludeFromExport: true,
-    },
-  );
-
-  // Front windshield
-  const frontWind = new Polygon(
-    [
-      { x: 280, y: 82 },
-      { x: 320, y: 82 },
-      { x: 318, y: 128 },
-      { x: 282, y: 128 },
-    ],
-    {
-      fill: '#bfdbfe',
-      stroke: '#94a3b8',
-      strokeWidth: 1.5,
-      selectable: false,
-      evented: false,
-      excludeFromExport: true,
-    },
-  );
-
-  // Rear windshield
-  const rearWind = new Polygon(
-    [
-      { x: 82, y: 82 },
-      { x: 118, y: 82 },
-      { x: 118, y: 128 },
-      { x: 84, y: 128 },
-    ],
-    {
-      fill: '#bfdbfe',
-      stroke: '#94a3b8',
-      strokeWidth: 1.5,
-      selectable: false,
-      evented: false,
-      excludeFromExport: true,
-    },
-  );
-
-  // Bumpers
-  const frontBumper = new Rect({
-    left: 340,
-    top: 95,
-    width: 20,
-    height: 110,
-    fill: '#94a3b8',
-    stroke: '#64748b',
-    strokeWidth: 1,
-    rx: 4,
-    ry: 4,
-    selectable: false,
-    evented: false,
-    excludeFromExport: true,
-  });
-
-  const rearBumper = new Rect({
-    left: 40,
-    top: 95,
-    width: 20,
-    height: 110,
-    fill: '#94a3b8',
-    stroke: '#64748b',
-    strokeWidth: 1,
-    rx: 4,
-    ry: 4,
-    selectable: false,
-    evented: false,
-    excludeFromExport: true,
-  });
-
-  // Wheels
-  const wheelDefs = [
-    { left: 90, top: 200 },
-    { left: 90, top: 60 },
-    { left: 270, top: 200 },
-    { left: 270, top: 60 },
-  ];
-
-  const wheels = wheelDefs.map(
-    (pos) =>
-      new Rect({
-        left: pos.left,
-        top: pos.top,
-        width: 40,
-        height: 40,
-        fill: '#475569',
-        stroke: '#1e293b',
-        strokeWidth: 2,
-        rx: 6,
-        ry: 6,
-        selectable: false,
-        evented: false,
-        excludeFromExport: true,
-      }),
-  );
-
-  // Center divider line
-  const centerLine = new Line([200, 80, 200, 220], {
-    stroke: '#94a3b8',
-    strokeWidth: 1,
-    strokeDashArray: [4, 4],
-    selectable: false,
-    evented: false,
-    excludeFromExport: true,
-  });
-
-  // Direction labels
-  const frontLabel = new Text('FRENTE', {
-    left: 370,
-    top: 150,
-    fontSize: 10,
-    fill: '#64748b',
-    angle: 90,
-    selectable: false,
-    evented: false,
-    excludeFromExport: true,
-    originX: 'center',
-    originY: 'center',
-  });
-
-  const rearLabel = new Text('ATRÁS', {
-    left: 20,
-    top: 150,
-    fontSize: 10,
-    fill: '#64748b',
-    angle: 90,
-    selectable: false,
-    evented: false,
-    excludeFromExport: true,
-    originX: 'center',
-    originY: 'center',
-  });
-
-  [
-    body,
-    roof,
-    frontWind,
-    rearWind,
-    frontBumper,
-    rearBumper,
-    ...wheels,
-    centerLine,
-    frontLabel,
-    rearLabel,
-  ].forEach((obj) => canvas.add(obj));
+interface DamageMapProps {
+  workOrderId: string;
+  damageMap: DamageMapData | null;
+  damageNotes: string | null;
+  onSaved: () => void;
 }
 
-function addDamageCircle(
-  canvas: FabricCanvas,
-  fabric: FabricModule,
-  x: number,
-  y: number,
-  color: DamageColor,
-) {
-  const cfg = colorConfig[color];
-  const Circle = fabric.Circle as new (opts: Partial<CircleProps>) => FabricObject;
-  const circle = new Circle({
-    left: x - 12,
-    top: y - 12,
-    radius: 12,
-    fill: cfg.hex + 'cc',
-    stroke: cfg.stroke,
-    strokeWidth: 2,
-    selectable: true,
-    hasControls: false,
-    hasBorders: false,
-  });
-  canvas.add(circle);
-  canvas.setActiveObject(circle);
-  canvas.renderAll();
-}
+export function DamageMap({
+  workOrderId,
+  damageMap,
+  damageNotes: initialNotes,
+  onSaved,
+}: DamageMapProps) {
+  const imageRef = useRef<HTMLDivElement>(null);
+  const updateWorkOrder = useUpdateWorkOrder();
 
-export function DamageMap({ initialMap, initialNotes, onSave, isSaving }: DamageMapProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fabricRef = useRef<FabricCanvas | null>(null);
-  const fabricModuleRef = useRef<FabricModule | null>(null);
-  const [selectedColor, setSelectedColor] = useState<DamageColor>('red');
-  const selectedColorRef = useRef<DamageColor>('red');
-  const [damageNotes, setDamageNotes] = useState(initialNotes ?? '');
-  const [fabricLoaded, setFabricLoaded] = useState(false);
+  const [markers, setMarkers] = useState<DamageMarker[]>(
+    damageMap?.markers ?? [],
+  );
+  const [notes, setNotes] = useState(initialNotes ?? '');
+  const [selectedSeverity, setSelectedSeverity] = useState<DamageMarker['severity']>('moderado');
+  const [selectedMarker, setSelectedMarker] = useState<string | null>(null);
+  const [editingDescription, setEditingDescription] = useState('');
+  const [isPlacing, setIsPlacing] = useState(false);
 
-  // Keep ref in sync for event handlers
-  selectedColorRef.current = selectedColor;
+  function handleImageClick(e: React.MouseEvent<HTMLDivElement>) {
+    if (!isPlacing) return;
 
-  useEffect(() => {
-    let mounted = true;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
 
-    async function initFabric() {
-      const fabric = await import('fabric');
-      if (!mounted || !canvasRef.current) return;
-
-      fabricModuleRef.current = fabric;
-
-      const canvas = new fabric.Canvas(canvasRef.current, {
-        width: 400,
-        height: 300,
-        backgroundColor: '#f8fafc',
-        selection: false,
-      });
-
-      fabricRef.current = canvas;
-
-      drawCarOutline(canvas, fabric);
-
-      // Load existing damage map
-      if (initialMap) {
-        try {
-          const parsed = JSON.parse(initialMap) as { objects?: unknown[] };
-          if (parsed.objects) {
-            for (const objData of parsed.objects) {
-              const enlivened = await fabric.util.enlivenObjects([objData]);
-              enlivened.forEach((o) => canvas.add(o as FabricObject));
-            }
-            canvas.renderAll();
-          }
-        } catch {
-          // Ignore parse errors
-        }
-      }
-
-      // Click handler to add damage circle
-      canvas.on('mouse:down', (opt) => {
-        const pointer = canvas.getViewportPoint(opt.e);
-        addDamageCircle(canvas, fabric, pointer.x, pointer.y, selectedColorRef.current);
-      });
-
-      // Delete selected with keyboard
-      const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === 'Delete' || e.key === 'Backspace') {
-          const active = canvas.getActiveObject();
-          if (active) {
-            canvas.remove(active);
-            canvas.renderAll();
-          }
-        }
-      };
-
-      window.addEventListener('keydown', handleKeyDown);
-      setFabricLoaded(true);
-
-      return () => {
-        window.removeEventListener('keydown', handleKeyDown);
-      };
-    }
-
-    void initFabric();
-
-    return () => {
-      mounted = false;
-      if (fabricRef.current) {
-        fabricRef.current.dispose();
-        fabricRef.current = null;
-      }
+    const newMarker: DamageMarker = {
+      id: `dmg-${Date.now()}`,
+      x: Math.round(x * 10) / 10,
+      y: Math.round(y * 10) / 10,
+      severity: selectedSeverity,
+      description: '',
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
-  function handleClear() {
-    const canvas = fabricRef.current;
-    if (!canvas) return;
-    const toRemove = canvas.getObjects().filter((obj) => {
-      return (obj as unknown as Record<string, unknown>).excludeFromExport !== true;
-    });
-    toRemove.forEach((obj) => canvas.remove(obj));
-    canvas.renderAll();
+    setMarkers([...markers, newMarker]);
+    setSelectedMarker(newMarker.id);
+    setEditingDescription('');
+    setIsPlacing(false);
   }
 
-  function handleSave() {
-    const canvas = fabricRef.current;
-    if (!canvas) return;
+  function handleUpdateDescription(id: string) {
+    setMarkers(
+      markers.map((m) =>
+        m.id === id ? { ...m, description: editingDescription } : m,
+      ),
+    );
+    setSelectedMarker(null);
+  }
 
-    const damageObjects = canvas.getObjects().filter((obj) => {
-      return (obj as unknown as Record<string, unknown>).excludeFromExport !== true;
+  function handleDeleteMarker(id: string) {
+    setMarkers(markers.filter((m) => m.id !== id));
+    if (selectedMarker === id) setSelectedMarker(null);
+  }
+
+  async function handleSave() {
+    const data: DamageMapData = {
+      markers,
+      template: 'default',
+    };
+
+    await updateWorkOrder.mutateAsync({
+      id: workOrderId,
+      data: {
+        damageMap: data as unknown as Record<string, unknown>,
+        damageNotes: notes || undefined,
+      },
     });
-
-    const mapData =
-      damageObjects.length > 0
-        ? JSON.stringify({ objects: damageObjects.map((o) => o.toObject()) })
-        : null;
-
-    onSave(mapData, damageNotes || null);
+    onSaved();
   }
 
   return (
     <div className="space-y-4">
-      {/* Color selector */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <span className="text-xs font-medium text-[var(--color-text-secondary)]">
-          Tipo de daño:
-        </span>
-        {(Object.entries(colorConfig) as [DamageColor, (typeof colorConfig)[DamageColor]][]).map(
-          ([key, cfg]) => (
-            <button
-              key={key}
-              onClick={() => setSelectedColor(key)}
-              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium border transition-all ${
-                selectedColor === key
-                  ? 'border-transparent text-white shadow-sm'
-                  : 'border-[var(--color-border)] text-[var(--color-text-secondary)] bg-[var(--color-bg)]'
-              }`}
-              style={selectedColor === key ? { backgroundColor: cfg.hex } : undefined}
-            >
-              <span
-                className="h-3 w-3 rounded-full border border-white/50"
-                style={{ backgroundColor: cfg.hex }}
-              />
-              {cfg.label}
-            </button>
-          ),
-        )}
-      </div>
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          type="button"
+          variant={isPlacing ? 'default' : 'outline'}
+          size="sm"
+          className={cn(
+            'rounded-xl gap-1.5',
+            isPlacing && 'bg-[#1e3a5f] text-white',
+          )}
+          onClick={() => setIsPlacing(!isPlacing)}
+        >
+          {isPlacing ? (
+            <>
+              <CircleDot className="h-3.5 w-3.5 animate-pulse" />
+              Click en la imagen...
+            </>
+          ) : (
+            <>
+              <Plus className="h-3.5 w-3.5" />
+              Agregar daño
+            </>
+          )}
+        </Button>
 
-      {/* Canvas */}
-      <div className="relative rounded-xl border border-[var(--color-border)] overflow-hidden bg-[#f8fafc]">
-        {!fabricLoaded && (
-          <div className="absolute inset-0 flex items-center justify-center bg-[#f8fafc] z-10">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#1e3a5f] border-t-transparent" />
+        {isPlacing && (
+          <div className="flex gap-1">
+            {(Object.entries(SEVERITY_CONFIG) as [DamageMarker['severity'], (typeof SEVERITY_CONFIG)['leve']][]).map(
+              ([key, config]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setSelectedSeverity(key)}
+                  className={cn(
+                    'px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors',
+                    selectedSeverity === key
+                      ? `${config.bg} ${config.text} border-current`
+                      : 'border-[var(--color-border)] text-[var(--color-text-secondary)]',
+                  )}
+                >
+                  {config.label}
+                </button>
+              ),
+            )}
           </div>
         )}
-        <canvas ref={canvasRef} />
-        <p className="absolute bottom-2 right-3 text-[10px] text-[#94a3b8] pointer-events-none">
-          Clic para marcar daño · Seleccionar + Delete para eliminar
-        </p>
+
+        <div className="ml-auto">
+          <Button
+            type="button"
+            size="sm"
+            className="rounded-xl bg-[#1e3a5f] text-white hover:bg-[#162d4a] gap-1.5"
+            onClick={handleSave}
+            disabled={updateWorkOrder.isPending}
+          >
+            <Save className="h-3.5 w-3.5" />
+            Guardar
+          </Button>
+        </div>
       </div>
+
+      {/* Vehicle image with markers */}
+      <div
+        ref={imageRef}
+        className={cn(
+          'relative rounded-xl border-2 border-dashed border-[var(--color-border)] bg-white overflow-hidden mx-auto',
+          isPlacing && 'cursor-crosshair border-[#1e3a5f]',
+        )}
+        style={{ maxWidth: 300, aspectRatio: '200/450' }}
+        onClick={handleImageClick}
+      >
+        <img
+          src={DEFAULT_VEHICLE_SVG}
+          alt="Vista superior del vehículo"
+          className="w-full h-full object-contain pointer-events-none select-none"
+          draggable={false}
+        />
+
+        {markers.map((marker, index) => {
+          const config = SEVERITY_CONFIG[marker.severity];
+          const isSelected = selectedMarker === marker.id;
+
+          return (
+            <button
+              key={marker.id}
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedMarker(isSelected ? null : marker.id);
+                setEditingDescription(marker.description);
+              }}
+              className={cn(
+                'absolute flex items-center justify-center h-7 w-7 -ml-3.5 -mt-3.5 rounded-full text-white text-xs font-bold shadow-lg transition-transform',
+                config.color,
+                isSelected && `ring-3 ${config.ring} scale-125`,
+              )}
+              style={{ left: `${marker.x}%`, top: `${marker.y}%` }}
+            >
+              {index + 1}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Selected marker editor */}
+      {selectedMarker && (() => {
+        const marker = markers.find((m) => m.id === selectedMarker);
+        if (!marker) return null;
+        const config = SEVERITY_CONFIG[marker.severity];
+        const index = markers.indexOf(marker);
+
+        return (
+          <div className={cn('rounded-xl border p-3 space-y-2', config.bg, 'border-current', config.text)}>
+            <div className="flex items-center justify-between">
+              <Badge className={cn(config.color, 'text-white')}>
+                #{index + 1} — {config.label}
+              </Badge>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => handleDeleteMarker(marker.id)}
+                className="text-red-500 hover:text-red-700 hover:bg-red-100"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+            <div className="flex gap-2">
+              <Input
+                value={editingDescription}
+                onChange={(e) => setEditingDescription(e.target.value)}
+                placeholder="Describe el daño (ej: Rayón en puerta derecha)"
+                className="h-9 rounded-lg text-sm bg-white text-[var(--color-text-primary)]"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleUpdateDescription(marker.id);
+                }}
+              />
+              <Button
+                type="button"
+                size="sm"
+                className="rounded-lg h-9 bg-[#1e3a5f] text-white"
+                onClick={() => handleUpdateDescription(marker.id)}
+              >
+                OK
+              </Button>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Markers list */}
+      {markers.length > 0 && (
+        <div className="space-y-1.5">
+          <p className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
+            Daños registrados ({markers.length})
+          </p>
+          <div className="space-y-1">
+            {markers.map((marker, index) => {
+              const config = SEVERITY_CONFIG[marker.severity];
+              return (
+                <div
+                  key={marker.id}
+                  className={cn(
+                    'flex items-center gap-2 rounded-lg px-3 py-2 text-sm cursor-pointer transition-colors',
+                    selectedMarker === marker.id
+                      ? `${config.bg} ${config.text}`
+                      : 'hover:bg-[var(--color-bg-secondary)]',
+                  )}
+                  onClick={() => {
+                    setSelectedMarker(marker.id);
+                    setEditingDescription(marker.description);
+                  }}
+                >
+                  <span className={cn('flex h-5 w-5 items-center justify-center rounded-full text-white text-[10px] font-bold', config.color)}>
+                    {index + 1}
+                  </span>
+                  <span className="flex-1 truncate">
+                    {marker.description || 'Sin descripción'}
+                  </span>
+                  <Badge variant="outline" className="text-[10px]">
+                    {config.label}
+                  </Badge>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {markers.length === 0 && !isPlacing && (
+        <div className="text-center py-6 text-sm text-[var(--color-text-secondary)]">
+          <AlertTriangle className="h-8 w-8 mx-auto mb-2 opacity-30" />
+          <p>No hay daños registrados</p>
+          <p className="text-xs mt-1">
+            Haz click en &quot;Agregar daño&quot; y luego en la imagen del vehículo
+          </p>
+        </div>
+      )}
 
       {/* Damage notes */}
       <div className="space-y-1.5">
-        <Label className="text-xs">Notas de daños</Label>
-        <textarea
-          value={damageNotes}
-          onChange={(e) => setDamageNotes(e.target.value)}
-          placeholder="Describa los daños observados..."
-          rows={3}
-          className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-sm placeholder:text-[var(--color-text-secondary)] focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] resize-none"
+        <p className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
+          Notas adicionales
+        </p>
+        <Textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Observaciones generales sobre el estado del vehículo..."
+          className="min-h-[60px] rounded-xl resize-none text-sm"
         />
-      </div>
-
-      {/* Actions */}
-      <div className="flex items-center justify-between pt-2 border-t border-[var(--color-border)]">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleClear}
-          className="rounded-xl border-[var(--color-border)] text-[var(--color-text-secondary)]"
-        >
-          <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
-          Limpiar
-        </Button>
-        <Button
-          size="sm"
-          onClick={handleSave}
-          disabled={isSaving}
-          className="rounded-xl bg-[#1e3a5f] text-white hover:bg-[#162d4a]"
-        >
-          <Save className="h-3.5 w-3.5 mr-1.5" />
-          Guardar mapa de daños
-        </Button>
       </div>
     </div>
   );

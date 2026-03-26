@@ -235,13 +235,6 @@ export function WorkOrderDetailDialog({
     await removeAttachment.mutateAsync({ woId: workOrder!.id, attachmentId });
   }
 
-  async function handleSaveDamageMap(damageMap: string | null, damageNotes: string | null) {
-    await updateWorkOrder.mutateAsync({
-      id: workOrder!.id,
-      data: { damageMap, damageNotes },
-    });
-  }
-
   const filteredProducts = products?.filter((p) => {
     if (!productSearch) return true;
     const q = productSearch.toLowerCase();
@@ -362,10 +355,10 @@ export function WorkOrderDetailDialog({
           )}
           {activeTab === 'danos' && (
             <DamageMap
-              initialMap={workOrder.damageMap ?? null}
-              initialNotes={workOrder.damageNotes ?? null}
-              onSave={handleSaveDamageMap}
-              isSaving={updateWorkOrder.isPending}
+              workOrderId={workOrder.id}
+              damageMap={workOrder.damageMap as { markers: { id: string; x: number; y: number; severity: 'leve' | 'moderado' | 'grave'; description: string }[]; template: string } | null}
+              damageNotes={workOrder.damageNotes ?? null}
+              onSaved={() => {}}
             />
           )}
         </div>
