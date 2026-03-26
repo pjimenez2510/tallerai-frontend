@@ -3,7 +3,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useState } from 'react';
-import { User, Mail, Lock, Phone, Eye, EyeOff } from 'lucide-react';
+import { User, Mail, Lock, Phone, Eye, EyeOff, Shield, ChevronDown } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +24,7 @@ import {
   type UpdateUserFormData,
 } from '@/lib/validations/user';
 import { useCreateUser, useUpdateUser } from '@/hooks/use-users';
+import { useRoles } from '@/hooks/use-roles';
 import type { WorkshopUser } from '@/types/user.types';
 
 interface UserFormDialogProps {
@@ -31,13 +32,6 @@ interface UserFormDialogProps {
   onOpenChange: (open: boolean) => void;
   user?: WorkshopUser | null;
 }
-
-const roleOptions = [
-  { value: 'admin', label: 'Administrador', description: 'Acceso total al sistema' },
-  { value: 'jefe_taller', label: 'Jefe de Taller', description: 'Gestión de OT, inventario y personal' },
-  { value: 'recepcionista', label: 'Recepcionista', description: 'Clientes, vehículos y recepción de OT' },
-  { value: 'mecanico', label: 'Mecánico', description: 'Vista de tareas asignadas' },
-];
 
 export function UserFormDialog({
   open,
@@ -47,6 +41,7 @@ export function UserFormDialog({
   const isEditing = !!user;
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();
+  const { data: roles, isLoading: loadingRoles } = useRoles();
   const [showPassword, setShowPassword] = useState(false);
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
 
@@ -63,10 +58,13 @@ export function UserFormDialog({
       name: '',
       email: '',
       password: '',
-      role: 'mecanico',
+      roleId: '',
       phone: '',
     },
   });
+
+  const selectedRoleId = watch('roleId');
+  const selectedRole = roles?.find((r) => r.id === selectedRoleId);
 
   useEffect(() => {
     if (user) {
@@ -74,7 +72,7 @@ export function UserFormDialog({
         name: user.name,
         email: user.email,
         password: '',
-        role: user.role,
+        roleId: user.roleId ?? '',
         phone: user.phone ?? '',
       });
     } else {
@@ -82,16 +80,19 @@ export function UserFormDialog({
         name: '',
         email: '',
         password: '',
-        role: 'mecanico',
+        roleId: '',
         phone: '',
       });
     }
     setShowPassword(false);
-  }, [user, reset]);
+    setRoleDropdownOpen(false);
+  }, [user, reset, open]);
 
   async function onSubmit(data: CreateUserFormData | UpdateUserFormData) {
     const payload = {
-      ...data,
+      name: data.name,
+      email: data.email,
+      roleId: data.roleId,
       phone: data.phone || undefined,
       password: data.password || undefined,
     };
@@ -196,43 +197,58 @@ export function UserFormDialog({
               <button
                 type="button"
                 onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
+                disabled={loadingRoles}
                 className={cn(
                   'flex w-full items-center justify-between h-10 rounded-xl border border-input bg-transparent px-3 text-sm transition-colors hover:border-ring',
-                  !watch('role') && 'text-muted-foreground',
+                  !selectedRoleId && 'text-muted-foreground',
                 )}
               >
-                {roleOptions.find((r) => r.value === watch('role'))?.label ??
-                  'Seleccionar rol'}
+                <span className="flex items-center gap-2">
+                  {selectedRole ? (
+                    <>
+                      <Shield className="h-3.5 w-3.5 text-[var(--color-text-secondary)]" />
+                      {selectedRole.name}
+                    </>
+                  ) : loadingRoles ? (
+                    'Cargando roles...'
+                  ) : (
+                    'Seleccionar rol'
+                  )}
+                </span>
+                <ChevronDown className="h-4 w-4 text-[var(--color-text-secondary)]" />
               </button>
-              {roleDropdownOpen && (
+              {roleDropdownOpen && roles && roles.length > 0 && (
                 <div className="absolute z-50 mt-1 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] shadow-lg p-1 max-h-60 overflow-y-auto">
-                  {roleOptions.map((opt) => (
+                  {roles.map((r) => (
                     <button
-                      key={opt.value}
+                      key={r.id}
                       type="button"
                       onClick={() => {
-                        setValue('role', opt.value as CreateUserFormData['role'], {
-                          shouldValidate: true,
-                        });
+                        setValue('roleId', r.id, { shouldValidate: true });
                         setRoleDropdownOpen(false);
                       }}
                       className={cn(
                         'flex w-full flex-col rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-[var(--color-bg-secondary)]',
-                        watch('role') === opt.value && 'bg-[var(--color-bg-secondary)]',
+                        selectedRoleId === r.id && 'bg-[var(--color-bg-secondary)]',
                       )}
                     >
-                      <span className="text-sm font-medium">{opt.label}</span>
-                      <span className="text-xs text-[var(--color-text-secondary)]">
-                        {opt.description}
+                      <span className="text-sm font-medium">{r.name}</span>
+                      {r.description && (
+                        <span className="text-xs text-[var(--color-text-secondary)]">
+                          {r.description}
+                        </span>
+                      )}
+                      <span className="text-xs text-[var(--color-text-secondary)] mt-0.5">
+                        {r.permissions.length} permiso{r.permissions.length !== 1 ? 's' : ''}
                       </span>
                     </button>
                   ))}
                 </div>
               )}
             </div>
-            {errors.role && (
+            {errors.roleId && (
               <p className="text-xs text-[var(--color-error)]">
-                {errors.role.message}
+                {errors.roleId.message}
               </p>
             )}
           </div>

@@ -10,9 +10,7 @@ export const createUserSchema = z.object({
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/,
       'Debe contener mayúscula, minúscula y número',
     ),
-  role: z.enum(['admin', 'jefe_taller', 'recepcionista', 'mecanico'], {
-    message: 'Selecciona un rol',
-  }),
+  roleId: z.string().min(1, 'Selecciona un rol'),
   phone: z.string().max(20).optional().or(z.literal('')),
 });
 
@@ -30,9 +28,7 @@ export const updateUserSchema = z.object({
     )
     .optional()
     .or(z.literal('')),
-  role: z.enum(['admin', 'jefe_taller', 'recepcionista', 'mecanico'], {
-    message: 'Selecciona un rol',
-  }),
+  roleId: z.string().min(1, 'Selecciona un rol'),
   phone: z.string().max(20).optional().or(z.literal('')),
 });
 
