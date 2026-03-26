@@ -77,6 +77,8 @@ export interface WorkOrder {
   tasks: WorkOrderTask[];
   parts: WorkOrderPart[];
   clientSignature: string | null;
+  damageMap: string | null;
+  damageNotes: string | null;
   parentId: string | null;
   supplements: WorkOrderSupplement[];
   createdAt: string;
@@ -105,6 +107,22 @@ export interface VehicleTimelineEntry {
   completedDate: string | null;
 }
 
+export interface WorkOrderAttachment {
+  id: string;
+  filename: string;
+  mimeType: string;
+  size: number;
+  description: string | null;
+  createdAt: string;
+}
+
+export interface AddAttachmentRequest {
+  filename: string;
+  mimeType: string;
+  data: string;
+  description?: string;
+}
+
 export interface CreateWorkOrderRequest {
   clientId: string;
   vehicleId: string;
@@ -125,6 +143,8 @@ export interface UpdateWorkOrderRequest {
   assignedTo?: string | null;
   estimatedDate?: string | null;
   clientSignature?: string | null;
+  damageMap?: string | null;
+  damageNotes?: string | null;
 }
 
 export interface QuoteTask {
