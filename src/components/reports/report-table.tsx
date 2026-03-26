@@ -7,6 +7,14 @@ interface ReportTableProps {
 }
 
 export function ReportTable({ table }: ReportTableProps) {
+  if (!table || !table.headers) {
+    return (
+      <div className="flex items-center justify-center py-8 text-sm text-[var(--color-text-secondary)]">
+        Cargando datos...
+      </div>
+    );
+  }
+
   const rows = table.rows.slice(0, 10);
 
   if (!table.headers.length) {

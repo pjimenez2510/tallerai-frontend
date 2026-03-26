@@ -82,8 +82,8 @@ export function RoleFormDialog({ open, onOpenChange, role }: RoleFormDialogProps
         setSelectedPermissions(new Set());
       }
       // Expand all groups by default
-      if (permissionGroups) {
-        setExpandedGroups(new Set(permissionGroups.map((g) => g.module)));
+      if (Array.isArray(permissionGroups)) {
+        setExpandedGroups(new Set(permissionGroups.map((g: { module: string }) => g.module)));
       }
     }
   }, [open, role, reset, permissionGroups]);

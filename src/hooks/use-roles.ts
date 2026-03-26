@@ -16,12 +16,58 @@ export function useRoles() {
   });
 }
 
+const MODULE_LABELS: Record<string, string> = {
+  dashboard: 'Dashboard',
+  clients: 'Clientes',
+  vehicles: 'Vehículos',
+  work_orders: 'Órdenes de Trabajo',
+  inventory: 'Inventario',
+  services: 'Servicios',
+  purchases: 'Compras',
+  users: 'Usuarios',
+  roles: 'Roles',
+  settings: 'Configuración',
+  reports: 'Reportes',
+  kanban: 'Kanban',
+  mechanic: 'Vista Mecánico',
+  notifications: 'Notificaciones',
+};
+
+const PERMISSION_LABELS: Record<string, string> = {
+  view: 'Ver',
+  create: 'Crear',
+  edit: 'Editar',
+  delete: 'Eliminar',
+  change_status: 'Cambiar estado',
+  assign: 'Asignar',
+  stock_movements: 'Movimientos de stock',
+  receive: 'Recibir',
+  cancel: 'Cancelar',
+  deactivate: 'Desactivar',
+  export: 'Exportar',
+  move: 'Mover',
+  complete_tasks: 'Completar tareas',
+  productivity: 'Productividad',
+};
+
 export function useRolePermissions() {
   return useQuery({
     queryKey: ['roles', 'permissions'],
     queryFn: async () => {
       const response = await rolesApi.getPermissions();
-      return response.data;
+      const data = response.data;
+
+      return Object.entries(data).map(([module, permissions]) => ({
+        module: MODULE_LABELS[module] ?? module,
+        moduleKey: module,
+        permissions: permissions.map((p) => {
+          const action = p.split('.').slice(1).join('.');
+          return {
+            key: p,
+            label: PERMISSION_LABELS[action] ?? action,
+          };
+        }),
+      }));
     },
   });
 }

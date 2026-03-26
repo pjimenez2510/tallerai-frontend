@@ -1,7 +1,6 @@
 import { apiClient } from './client';
 import type {
   Role,
-  PermissionGroup,
   CreateRoleRequest,
   UpdateRoleRequest,
 } from '@/types/role.types';
@@ -28,6 +27,6 @@ export const rolesApi = {
   },
 
   getPermissions() {
-    return apiClient.get<PermissionGroup[]>('/roles/permissions');
+    return apiClient.get<Record<string, string[]>>('/roles/permissions');
   },
 };
