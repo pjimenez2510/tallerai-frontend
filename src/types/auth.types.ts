@@ -1,13 +1,11 @@
-export type UserRole = 'admin' | 'jefe_taller' | 'recepcionista' | 'mecanico';
-
 export interface AuthUser {
   id: string;
   name: string;
   email: string;
-  role: UserRole;
   tenantId: string;
   roleId: string | null;
   roleSlug: string | null;
+  roleName: string | null;
   permissions: string[];
 }
 
@@ -47,7 +45,6 @@ export interface MeResponse {
   id: string;
   name: string;
   email: string;
-  role: UserRole;
   phone: string | null;
   avatarUrl: string | null;
   tenantId: string;

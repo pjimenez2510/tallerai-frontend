@@ -43,20 +43,6 @@ const passwordSchema = z
 type ProfileFormData = z.infer<typeof profileSchema>;
 type PasswordFormData = z.infer<typeof passwordSchema>;
 
-const roleLabels: Record<string, string> = {
-  admin: 'Administrador',
-  jefe_taller: 'Jefe de Taller',
-  recepcionista: 'Recepcionista',
-  mecanico: 'Mecánico',
-};
-
-const roleColors: Record<string, string> = {
-  admin: 'bg-rose-100 text-rose-700',
-  jefe_taller: 'bg-indigo-100 text-indigo-700',
-  recepcionista: 'bg-emerald-100 text-emerald-700',
-  mecanico: 'bg-amber-100 text-amber-700',
-};
-
 export function ProfileContent() {
   const user = useAuthStore((s) => s.user);
   const updateProfile = useUpdateProfile();
@@ -125,10 +111,10 @@ export function ProfileContent() {
               {user.email}
             </p>
             <Badge
-              className={`mt-1 text-[10px] font-medium ${roleColors[user.role] ?? 'bg-slate-100 text-slate-700'}`}
+              className="mt-1 text-[10px] font-medium bg-slate-100 text-slate-700"
             >
               <Shield className="h-3 w-3 mr-1" />
-              {roleLabels[user.role] ?? user.role}
+              {user.roleName ?? user.roleSlug ?? 'Usuario'}
             </Badge>
           </div>
         </div>

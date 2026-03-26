@@ -211,7 +211,7 @@ export function UsersTable() {
                             )}
                           </div>
                           <p className="text-xs text-[var(--color-text-secondary)] truncate md:hidden">
-                            {user.roleName ?? user.role}
+                            {user.roleName ?? user.roleSlug ?? '—'}
                           </p>
                         </div>
                       </div>
@@ -219,7 +219,7 @@ export function UsersTable() {
                     <TableCell className="hidden md:table-cell">
                       <div className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium bg-[#1e3a5f]/10 text-[#1e3a5f]">
                         <Shield className="h-3.5 w-3.5" />
-                        {user.roleName ?? user.role}
+                        {user.roleName ?? user.roleSlug ?? '—'}
                       </div>
                     </TableCell>
                     <TableCell className="hidden lg:table-cell">
