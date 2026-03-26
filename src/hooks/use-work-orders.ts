@@ -10,6 +10,7 @@ import type {
   AddTaskRequest,
   UpdateTaskRequest,
   AddPartRequest,
+  AddAttachmentRequest,
   CreateSupplementRequest,
 } from '@/types/work-order.types';
 import { ApiError } from '@/types/api.types';
@@ -239,6 +240,53 @@ export function useRemovePart() {
     },
     onError: (error: ApiError) => {
       toast.error(error.message || 'Error al eliminar repuesto');
+    },
+  });
+}
+
+export function useWorkOrderAttachments(woId: string) {
+  return useQuery({
+    queryKey: ['work-orders', woId, 'attachments'],
+    queryFn: async () => {
+      const response = await workOrdersApi.listAttachments(woId);
+      return response.data;
+    },
+    enabled: !!woId,
+  });
+}
+
+export function useAddAttachment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ woId, data }: { woId: string; data: AddAttachmentRequest }) => {
+      const response = await workOrdersApi.addAttachment(woId, data);
+      return response;
+    },
+    onSuccess: (response, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['work-orders', variables.woId, 'attachments'] });
+      toast.success(response.message);
+    },
+    onError: (error: ApiError) => {
+      toast.error(error.message || 'Error al subir archivo');
+    },
+  });
+}
+
+export function useRemoveAttachment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ woId, attachmentId }: { woId: string; attachmentId: string }) => {
+      const response = await workOrdersApi.removeAttachment(woId, attachmentId);
+      return response;
+    },
+    onSuccess: (response, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['work-orders', variables.woId, 'attachments'] });
+      toast.success(response.message);
+    },
+    onError: (error: ApiError) => {
+      toast.error(error.message || 'Error al eliminar archivo');
     },
   });
 }

@@ -1,4 +1,4 @@
-import type { WorkOrderStatus } from './work-order.types';
+import type { WorkOrderStatus, WorkOrderPriority } from './work-order.types';
 
 export interface PublicWorkOrderStatus {
   orderNumber: string;
@@ -12,4 +12,32 @@ export interface PublicWorkOrderStatus {
   estimatedDate: string | null;
   completedDate: string | null;
   deliveredDate: string | null;
+}
+
+export interface PublicVehicleWorkOrder {
+  id: string;
+  orderNumber: string;
+  status: WorkOrderStatus;
+  priority: WorkOrderPriority;
+  description: string;
+  mechanicName: string | null;
+  mileageIn: number | null;
+  tasksCount: number;
+  partsCount: number;
+  totalParts: number;
+  totalLabor: number;
+  total: number;
+  createdAt: string;
+  completedDate: string | null;
+}
+
+export interface PublicVehicleHistory {
+  plate: string;
+  brand: string;
+  model: string;
+  year: number;
+  color: string | null;
+  clientName: string;
+  tenantName: string;
+  workOrders: PublicVehicleWorkOrder[];
 }

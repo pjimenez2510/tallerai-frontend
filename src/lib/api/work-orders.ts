@@ -4,6 +4,8 @@ import type {
   WorkOrderStatus,
   WorkOrderTask,
   WorkOrderPart,
+  WorkOrderAttachment,
+  AddAttachmentRequest,
   CreateWorkOrderRequest,
   UpdateWorkOrderRequest,
   AddTaskRequest,
@@ -70,5 +72,21 @@ export const workOrdersApi = {
 
   createSupplement(parentId: string, data: CreateSupplementRequest) {
     return apiClient.post<WorkOrder>(`/work-orders/${parentId}/supplement`, data);
+  },
+
+  listAttachments(woId: string) {
+    return apiClient.get<WorkOrderAttachment[]>(`/work-orders/${woId}/attachments`);
+  },
+
+  getAttachment(woId: string, attachmentId: string) {
+    return apiClient.get<WorkOrderAttachment>(`/work-orders/${woId}/attachments/${attachmentId}`);
+  },
+
+  addAttachment(woId: string, data: AddAttachmentRequest) {
+    return apiClient.post<WorkOrderAttachment>(`/work-orders/${woId}/attachments`, data);
+  },
+
+  removeAttachment(woId: string, attachmentId: string) {
+    return apiClient.delete<null>(`/work-orders/${woId}/attachments/${attachmentId}`);
   },
 };
