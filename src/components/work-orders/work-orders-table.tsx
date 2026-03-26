@@ -26,6 +26,7 @@ import {
 import { CreateWorkOrderDialog } from './create-work-order-dialog';
 import { WorkOrderDetailDialog } from './work-order-detail-dialog';
 import { useWorkOrders } from '@/hooks/use-work-orders';
+import { usePermissions } from '@/hooks/use-permissions';
 import type { WorkOrder, WorkOrderStatus } from '@/types/work-order.types';
 
 const statusConfig: Record<
@@ -66,6 +67,9 @@ export function WorkOrdersTable() {
 
   const statusFilter = activeTab === 'all' ? undefined : activeTab;
   const { data: workOrders, isLoading } = useWorkOrders(statusFilter);
+  const { hasPermission } = usePermissions();
+
+  const canCreate = hasPermission('work_orders.create');
 
   const filtered = workOrders?.filter((wo) => {
     if (!search) return true;
@@ -105,14 +109,16 @@ export function WorkOrdersTable() {
             className="h-10 pl-10 rounded-xl"
           />
         </div>
-        <Button
-          onClick={() => setCreateOpen(true)}
-          className="rounded-xl bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent)]/90 shadow-md shadow-[var(--color-accent)]/20"
-          size="lg"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Nueva OT
-        </Button>
+        {canCreate && (
+          <Button
+            onClick={() => setCreateOpen(true)}
+            className="rounded-xl bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent)]/90 shadow-md shadow-[var(--color-accent)]/20"
+            size="lg"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Nueva OT
+          </Button>
+        )}
       </div>
 
       {/* Stats */}

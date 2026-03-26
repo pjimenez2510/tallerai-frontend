@@ -33,6 +33,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { ClientFormDialog } from './client-form-dialog';
 import { useClients, useDeactivateClient } from '@/hooks/use-clients';
+import { usePermissions } from '@/hooks/use-permissions';
 import type { Client } from '@/types/client.types';
 
 const docTypeLabels: Record<string, string> = {
@@ -45,6 +46,11 @@ export function ClientsTable() {
   const router = useRouter();
   const { data: clients, isLoading } = useClients();
   const deactivateClient = useDeactivateClient();
+  const { hasPermission } = usePermissions();
+
+  const canCreate = hasPermission('clients.create');
+  const canEdit = hasPermission('clients.edit');
+  const canDelete = hasPermission('clients.delete');
 
   const [search, setSearch] = useState('');
   const [formOpen, setFormOpen] = useState(false);
@@ -99,14 +105,16 @@ export function ClientsTable() {
             className="h-10 pl-10 rounded-xl"
           />
         </div>
-        <Button
-          onClick={handleNew}
-          className="rounded-xl bg-[#1e3a5f] text-white hover:bg-[#162d4a] shadow-md shadow-[#1e3a5f]/20"
-          size="lg"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Nuevo Cliente
-        </Button>
+        {canCreate && (
+          <Button
+            onClick={handleNew}
+            className="rounded-xl bg-[#1e3a5f] text-white hover:bg-[#162d4a] shadow-md shadow-[#1e3a5f]/20"
+            size="lg"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Nuevo Cliente
+          </Button>
+        )}
       </div>
 
       {/* Stats */}
@@ -224,28 +232,32 @@ export function ClientsTable() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEdit(client);
-                        }}
-                        className="text-[var(--color-text-secondary)] hover:text-[var(--color-secondary)]"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeletingClient(client);
-                        }}
-                        className="text-[var(--color-text-secondary)] hover:text-[var(--color-error)]"
-                      >
-                        <UserX className="h-3.5 w-3.5" />
-                      </Button>
+                      {canEdit && (
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEdit(client);
+                          }}
+                          className="text-[var(--color-text-secondary)] hover:text-[var(--color-secondary)]"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                      {canDelete && (
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeletingClient(client);
+                          }}
+                          className="text-[var(--color-text-secondary)] hover:text-[var(--color-error)]"
+                        >
+                          <UserX className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>

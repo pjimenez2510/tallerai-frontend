@@ -35,12 +35,18 @@ import {
 } from '@/components/ui/alert-dialog';
 import { VehicleFormDialog } from './vehicle-form-dialog';
 import { useVehicles, useDeactivateVehicle } from '@/hooks/use-vehicles';
+import { usePermissions } from '@/hooks/use-permissions';
 import type { Vehicle } from '@/types/vehicle.types';
 
 export function VehiclesTable() {
   const router = useRouter();
   const { data: vehicles, isLoading } = useVehicles();
   const deactivateVehicle = useDeactivateVehicle();
+  const { hasPermission } = usePermissions();
+
+  const canCreate = hasPermission('vehicles.create');
+  const canEdit = hasPermission('vehicles.edit');
+  const canDelete = hasPermission('vehicles.delete');
 
   const [search, setSearch] = useState('');
   const [formOpen, setFormOpen] = useState(false);
@@ -95,14 +101,16 @@ export function VehiclesTable() {
             className="h-10 pl-10 rounded-xl"
           />
         </div>
-        <Button
-          onClick={handleNew}
-          className="rounded-xl bg-[#1e3a5f] text-white hover:bg-[#162d4a] shadow-md shadow-[#1e3a5f]/20"
-          size="lg"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Nuevo Vehículo
-        </Button>
+        {canCreate && (
+          <Button
+            onClick={handleNew}
+            className="rounded-xl bg-[#1e3a5f] text-white hover:bg-[#162d4a] shadow-md shadow-[#1e3a5f]/20"
+            size="lg"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Nuevo Vehículo
+          </Button>
+        )}
       </div>
 
       {/* Stats */}
@@ -247,28 +255,32 @@ export function VehiclesTable() {
                       >
                         <History className="h-3.5 w-3.5" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEdit(vehicle);
-                        }}
-                        className="text-[var(--color-text-secondary)] hover:text-[var(--color-secondary)]"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeletingVehicle(vehicle);
-                        }}
-                        className="text-[var(--color-text-secondary)] hover:text-[var(--color-error)]"
-                      >
-                        <CarFront className="h-3.5 w-3.5" />
-                      </Button>
+                      {canEdit && (
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEdit(vehicle);
+                          }}
+                          className="text-[var(--color-text-secondary)] hover:text-[var(--color-secondary)]"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                      {canDelete && (
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeletingVehicle(vehicle);
+                          }}
+                          className="text-[var(--color-text-secondary)] hover:text-[var(--color-error)]"
+                        >
+                          <CarFront className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
