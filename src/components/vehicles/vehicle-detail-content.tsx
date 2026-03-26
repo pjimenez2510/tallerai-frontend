@@ -13,7 +13,11 @@ import {
   DollarSign,
   CheckSquare,
   Clock,
+  QrCode,
+  Copy,
 } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
+import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -177,6 +181,21 @@ export function VehicleDetailContent({ vehicleId }: VehicleDetailContentProps) {
   const { data: vehicle, isLoading: loadingVehicle } = useVehicle(vehicleId);
   const { data: timeline, isLoading: loadingTimeline } = useVehicleTimeline(vehicleId);
 
+  const publicVehicleUrl =
+    typeof window !== 'undefined' && vehicle
+      ? `${window.location.origin}/track/vehicle/${encodeURIComponent(vehicle.plate)}`
+      : '';
+
+  async function handleCopyVehicleLink() {
+    if (!publicVehicleUrl) return;
+    try {
+      await navigator.clipboard.writeText(publicVehicleUrl);
+      toast.success('Enlace copiado al portapapeles');
+    } catch {
+      toast.error('No se pudo copiar el enlace');
+    }
+  }
+
   if (loadingVehicle) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -266,6 +285,50 @@ export function VehicleDetailContent({ vehicleId }: VehicleDetailContentProps) {
               <p className="text-sm font-medium">{vehicle.engine}</p>
             </div>
           )}
+        </div>
+
+        {/* QR code for public vehicle portal */}
+        <div className="mt-5 pt-5 border-t border-[var(--color-border)]">
+          <div className="flex items-start gap-4">
+            <div className="flex flex-col items-center gap-2 shrink-0">
+              <div className="rounded-xl bg-white border border-[var(--color-border)] p-2 shadow-sm">
+                {publicVehicleUrl ? (
+                  <QRCodeSVG
+                    value={publicVehicleUrl}
+                    size={80}
+                    bgColor="#ffffff"
+                    fgColor="#1e3a5f"
+                    level="M"
+                    includeMargin={false}
+                  />
+                ) : (
+                  <div className="h-20 w-20 flex items-center justify-center">
+                    <QrCode className="h-8 w-8 text-[var(--color-text-secondary)]/30" />
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <QrCode className="h-3.5 w-3.5 text-[var(--color-text-secondary)]" />
+                <p className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
+                  Portal público del vehículo
+                </p>
+              </div>
+              <p className="text-xs text-[var(--color-text-secondary)] mb-3">
+                El cliente puede escanear este código para ver el historial completo del vehículo.
+              </p>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleCopyVehicleLink}
+                className="rounded-xl border-[var(--color-border)] text-xs gap-1.5 h-8"
+              >
+                <Copy className="h-3 w-3" />
+                Copiar enlace
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
