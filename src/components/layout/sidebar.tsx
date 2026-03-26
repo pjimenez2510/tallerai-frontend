@@ -17,96 +17,111 @@ import {
   HardHat,
   Settings,
   BarChart3,
+  Shield,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth.store';
-
-const navItems = [
-  {
-    href: '/',
-    label: 'Dashboard',
-    icon: LayoutDashboard,
-    color: 'text-[#f97316]',
-  },
-  {
-    href: '/work-orders',
-    label: 'Órdenes de Trabajo',
-    icon: ClipboardList,
-    color: 'text-blue-400',
-  },
-  {
-    href: '/kanban',
-    label: 'Kanban',
-    icon: Kanban,
-    color: 'text-purple-400',
-  },
-  {
-    href: '/clients',
-    label: 'Clientes',
-    icon: Users,
-    color: 'text-emerald-400',
-  },
-  {
-    href: '/vehicles',
-    label: 'Vehículos',
-    icon: Car,
-    color: 'text-cyan-400',
-  },
-  {
-    href: '/inventory',
-    label: 'Inventario',
-    icon: Package,
-    color: 'text-amber-400',
-  },
-  {
-    href: '/services',
-    label: 'Servicios',
-    icon: Receipt,
-    color: 'text-teal-400',
-  },
-  {
-    href: '/purchases',
-    label: 'Compras',
-    icon: ShoppingCart,
-    color: 'text-indigo-400',
-  },
-];
-
-const adminItems = [
-  {
-    href: '/users',
-    label: 'Usuarios',
-    icon: UserCog,
-    color: 'text-rose-400',
-  },
-  {
-    href: '/reports',
-    label: 'Reportes',
-    icon: BarChart3,
-    color: 'text-violet-400',
-  },
-  {
-    href: '/settings',
-    label: 'Configuración',
-    icon: Settings,
-    color: 'text-slate-400',
-  },
-];
-
-const profileItem = {
-  href: '/profile',
-  label: 'Mi Perfil',
-  icon: UserCircle,
-  color: 'text-sky-400',
-};
+import { usePermissions } from '@/hooks/use-permissions';
 
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const tenant = useAuthStore((s) => s.tenant);
-  const isAdmin = user?.role === 'admin' || user?.role === 'jefe_taller';
-  const isMechanic = user?.role === 'mecanico';
+  const { hasPermission } = usePermissions();
+
+  const navItems = [
+    {
+      href: '/',
+      label: 'Dashboard',
+      icon: LayoutDashboard,
+      color: 'text-[#f97316]',
+      visible: true,
+    },
+    {
+      href: '/work-orders',
+      label: 'Órdenes de Trabajo',
+      icon: ClipboardList,
+      color: 'text-blue-400',
+      visible: hasPermission('work_orders.view'),
+    },
+    {
+      href: '/kanban',
+      label: 'Kanban',
+      icon: Kanban,
+      color: 'text-purple-400',
+      visible: hasPermission('kanban.view'),
+    },
+    {
+      href: '/clients',
+      label: 'Clientes',
+      icon: Users,
+      color: 'text-emerald-400',
+      visible: hasPermission('clients.view'),
+    },
+    {
+      href: '/vehicles',
+      label: 'Vehículos',
+      icon: Car,
+      color: 'text-cyan-400',
+      visible: hasPermission('vehicles.view'),
+    },
+    {
+      href: '/inventory',
+      label: 'Inventario',
+      icon: Package,
+      color: 'text-amber-400',
+      visible: hasPermission('inventory.view'),
+    },
+    {
+      href: '/services',
+      label: 'Servicios',
+      icon: Receipt,
+      color: 'text-teal-400',
+      visible: hasPermission('services.view'),
+    },
+    {
+      href: '/purchases',
+      label: 'Compras',
+      icon: ShoppingCart,
+      color: 'text-indigo-400',
+      visible: hasPermission('purchases.view'),
+    },
+  ].filter((item) => item.visible);
+
+  const adminItems = [
+    {
+      href: '/users',
+      label: 'Usuarios',
+      icon: UserCog,
+      color: 'text-rose-400',
+      visible: hasPermission('users.view'),
+    },
+    {
+      href: '/roles',
+      label: 'Roles',
+      icon: Shield,
+      color: 'text-violet-400',
+      visible: hasPermission('roles.view'),
+    },
+    {
+      href: '/reports',
+      label: 'Reportes',
+      icon: BarChart3,
+      color: 'text-violet-400',
+      visible: hasPermission('reports.view'),
+    },
+    {
+      href: '/settings',
+      label: 'Configuración',
+      icon: Settings,
+      color: 'text-slate-400',
+      visible: hasPermission('settings.view'),
+    },
+  ].filter((item) => item.visible);
+
+  const showMechanic = hasPermission('mechanic.view');
+  const showAdmin = adminItems.length > 0;
 
   return (
     <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 bg-gradient-to-b from-[#1e3a5f] to-[#0f1f33] border-r border-white/5">
@@ -182,7 +197,7 @@ export function Sidebar() {
         })}
 
         {/* Mechanic shortcut */}
-        {isMechanic && (
+        {showMechanic && (
           <>
             <p className="px-3 pt-6 pb-2 text-[10px] font-semibold text-white/30 uppercase tracking-widest">
               Mecánico
@@ -229,11 +244,10 @@ export function Sidebar() {
           Cuenta
         </p>
         {(() => {
-          const item = profileItem;
-          const isActive = pathname.startsWith(item.href);
+          const isActive = pathname.startsWith('/profile');
           return (
             <Link
-              href={item.href}
+              href="/profile"
               className={cn(
                 'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200',
                 isActive
@@ -249,14 +263,14 @@ export function Sidebar() {
                     : 'bg-transparent group-hover:bg-white/5',
                 )}
               >
-                <item.icon
+                <UserCircle
                   className={cn(
                     'h-4 w-4 transition-colors',
-                    isActive ? item.color : 'text-white/40 group-hover:text-white/60',
+                    isActive ? 'text-sky-400' : 'text-white/40 group-hover:text-white/60',
                   )}
                 />
               </div>
-              {item.label}
+              Mi Perfil
               {isActive && (
                 <div className="ml-auto h-1.5 w-1.5 rounded-full bg-[#f97316]" />
               )}
@@ -264,7 +278,7 @@ export function Sidebar() {
           );
         })()}
 
-        {isAdmin && (
+        {showAdmin && (
           <>
             <p className="px-3 pt-6 pb-2 text-[10px] font-semibold text-white/30 uppercase tracking-widest">
               Administración
