@@ -15,8 +15,10 @@ export const settingsApi = {
     return apiClient.patch<TenantSettings>('/settings', data);
   },
 
-  getBusiness() {
-    return apiClient.get<BusinessSettings>('/settings/business');
+  async getBusiness() {
+    const response = await apiClient.get<TenantSettings & { settings: BusinessSettings }>('/settings');
+    const defaults: BusinessSettings = { currency: 'USD', taxRate: 12, paymentTerms: null, workingHours: null };
+    return { ...response, data: response.data.settings ?? defaults };
   },
 
   updateBusiness(data: UpdateBusinessSettingsRequest) {

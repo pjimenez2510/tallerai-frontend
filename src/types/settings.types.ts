@@ -1,21 +1,20 @@
-export interface TenantSettings {
-  id: string;
-  name: string;
-  address: string | null;
-  phone: string | null;
-  email: string | null;
-  logoUrl: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface BusinessSettings {
-  id: string;
-  tenantId: string;
   currency: string;
   taxRate: number;
   paymentTerms: string | null;
   workingHours: string | null;
+}
+
+export interface TenantSettings {
+  id: string;
+  name: string;
+  ruc: string;
+  address: string | null;
+  phone: string | null;
+  email: string | null;
+  logoUrl: string | null;
+  settings: BusinessSettings | null;
+  isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
