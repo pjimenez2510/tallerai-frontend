@@ -3,10 +3,11 @@
 import { useState } from 'react';
 import { Download, ClipboardList, Package, Users } from 'lucide-react';
 
+import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { DatePicker } from '@/components/ui/date-picker';
 import { ReportSummaryCards } from './report-summary-cards';
 import { ReportTable } from './report-table';
 import {
@@ -50,14 +51,17 @@ function downloadCsv(table: ReportTableType, filename: string) {
 }
 
 function WorkOrdersTab() {
-  const [from, setFrom] = useState('');
-  const [to, setTo] = useState('');
+  const [fromDate, setFromDate] = useState<Date | null>(null);
+  const [toDate, setToDate] = useState<Date | null>(null);
   const [params, setParams] = useState<{ from?: string; to?: string }>({});
 
   const { data, isLoading, isFetching } = useWorkOrdersReport(params);
 
   function handleApply() {
-    setParams({ from: from || undefined, to: to || undefined });
+    setParams({
+      from: fromDate ? format(fromDate, 'yyyy-MM-dd') : undefined,
+      to: toDate ? format(toDate, 'yyyy-MM-dd') : undefined,
+    });
   }
 
   return (
@@ -66,20 +70,18 @@ function WorkOrdersTab() {
       <div className="flex flex-wrap items-end gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
         <div className="space-y-1.5">
           <Label className="text-xs">Desde</Label>
-          <Input
-            type="date"
-            value={from}
-            onChange={(e) => setFrom(e.target.value)}
-            className="h-10 rounded-xl w-40"
+          <DatePicker
+            value={fromDate}
+            onChange={(d) => setFromDate(d ?? null)}
+            placeholder="Fecha inicio"
           />
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs">Hasta</Label>
-          <Input
-            type="date"
-            value={to}
-            onChange={(e) => setTo(e.target.value)}
-            className="h-10 rounded-xl w-40"
+          <DatePicker
+            value={toDate}
+            onChange={(d) => setToDate(d ?? null)}
+            placeholder="Fecha fin"
           />
         </div>
         <Button

@@ -1,7 +1,7 @@
 export interface BusinessSettings {
   currency: string;
   taxRate: number;
-  paymentTerms: string | null;
+  defaultPaymentTerms: string | null;
   workingHours: string | null;
 }
 
@@ -30,6 +30,6 @@ export interface UpdateTenantSettingsRequest {
 export interface UpdateBusinessSettingsRequest {
   currency?: string;
   taxRate?: number;
-  paymentTerms?: string;
+  defaultPaymentTerms?: string;
   workingHours?: string;
 }

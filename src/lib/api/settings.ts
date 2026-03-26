@@ -17,7 +17,7 @@ export const settingsApi = {
 
   async getBusiness() {
     const response = await apiClient.get<TenantSettings & { settings: BusinessSettings }>('/settings');
-    const defaults: BusinessSettings = { currency: 'USD', taxRate: 12, paymentTerms: null, workingHours: null };
+    const defaults: BusinessSettings = { currency: 'USD', taxRate: 12, defaultPaymentTerms: null, workingHours: null };
     return { ...response, data: response.data.settings ?? defaults };
   },
 

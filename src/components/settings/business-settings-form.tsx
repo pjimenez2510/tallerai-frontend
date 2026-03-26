@@ -25,7 +25,7 @@ const businessSchema = z.object({
     .number({ error: 'Ingresa un porcentaje válido' })
     .min(0, 'El impuesto no puede ser negativo')
     .max(100, 'El impuesto no puede superar 100%'),
-  paymentTerms: z.string().max(200).optional().or(z.literal('')),
+  defaultPaymentTerms: z.string().max(200).optional().or(z.literal('')),
   workingHours: z.string().max(200).optional().or(z.literal('')),
 });
 
@@ -48,7 +48,7 @@ export function BusinessSettingsForm() {
     defaultValues: {
       currency: 'USD',
       taxRate: 12,
-      paymentTerms: '',
+      defaultPaymentTerms: '',
       workingHours: '',
     },
   });
@@ -58,7 +58,7 @@ export function BusinessSettingsForm() {
       reset({
         currency: settings.currency ?? 'USD',
         taxRate: settings.taxRate ?? 12,
-        paymentTerms: settings.paymentTerms ?? '',
+        defaultPaymentTerms: settings.defaultPaymentTerms ?? '',
         workingHours: settings.workingHours ?? '',
       });
     }
@@ -68,7 +68,7 @@ export function BusinessSettingsForm() {
     await updateBusiness.mutateAsync({
       currency: data.currency,
       taxRate: data.taxRate,
-      paymentTerms: data.paymentTerms || undefined,
+      defaultPaymentTerms: data.defaultPaymentTerms || undefined,
       workingHours: data.workingHours || undefined,
     });
   }
@@ -173,11 +173,11 @@ export function BusinessSettingsForm() {
             <Input
               placeholder="Pago inmediato al entregar el vehículo"
               className="h-10 pl-10 rounded-xl"
-              {...register('paymentTerms')}
+              {...register('defaultPaymentTerms')}
             />
           </div>
-          {errors.paymentTerms && (
-            <p className="text-xs text-[var(--color-error)]">{errors.paymentTerms.message}</p>
+          {errors.defaultPaymentTerms && (
+            <p className="text-xs text-[var(--color-error)]">{errors.defaultPaymentTerms.message}</p>
           )}
         </div>
 

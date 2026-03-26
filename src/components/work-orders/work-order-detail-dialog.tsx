@@ -835,7 +835,7 @@ function QuoteTab({
     );
   }
 
-  const IVA_RATE = 0.12;
+  const ivaPercent = quote.subtotal > 0 ? Math.round((quote.iva / quote.subtotal) * 100) : 0;
 
   return (
     <div className="space-y-4">
@@ -1031,7 +1031,7 @@ function QuoteTab({
                 <span className="text-sm font-mono">${quote.subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between items-center px-4 py-2 bg-[var(--color-bg-secondary)]">
-                <span className="text-xs text-[var(--color-text-secondary)]">IVA ({(IVA_RATE * 100).toFixed(0)}%)</span>
+                <span className="text-xs text-[var(--color-text-secondary)]">IVA ({ivaPercent}%)</span>
                 <span className="text-sm font-mono">${quote.iva.toFixed(2)}</span>
               </div>
               <div className="flex justify-between items-center px-4 py-2.5 bg-[#1e3a5f]">
