@@ -6,6 +6,9 @@ export interface AuthUser {
   email: string;
   role: UserRole;
   tenantId: string;
+  roleId: string | null;
+  roleSlug: string | null;
+  permissions: string[];
 }
 
 export interface AuthTenant {
@@ -49,6 +52,10 @@ export interface MeResponse {
   avatarUrl: string | null;
   tenantId: string;
   tenantName: string;
+  roleId: string | null;
+  roleName: string | null;
+  roleSlug: string | null;
+  permissions: string[];
 }
 
 export interface UpdateProfileRequest {
