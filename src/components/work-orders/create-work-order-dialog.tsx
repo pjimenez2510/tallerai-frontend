@@ -91,7 +91,8 @@ export function CreateWorkOrderDialog({
 
   const mechanics = users?.filter(
     (u) =>
-      (u.role === 'mecanico' || u.role === 'jefe_taller') && u.isActive,
+      u.isActive &&
+      (u.roleSlug === 'mecanico' || u.roleSlug === 'jefe_taller'),
   );
 
   const selectedVehicle = clientVehicles?.find(

@@ -22,13 +22,6 @@ const pageNames: Record<string, string> = {
   '/reports': 'Reportes',
 };
 
-const roleLabels: Record<string, string> = {
-  admin: 'Administrador',
-  jefe_taller: 'Jefe de Taller',
-  recepcionista: 'Recepcionista',
-  mecanico: 'Mecánico',
-};
-
 export function Header() {
   const router = useRouter();
   const pathname = usePathname();
@@ -93,7 +86,7 @@ export function Header() {
                 {user.name}
               </p>
               <p className="text-[10px] text-[var(--color-text-secondary)] leading-tight">
-                {roleLabels[user.role] ?? user.role}
+                {user.roleName ?? user.roleSlug ?? 'Usuario'}
               </p>
             </div>
           </div>
