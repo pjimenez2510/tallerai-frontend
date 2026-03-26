@@ -17,12 +17,6 @@ export function PagePermissionGuard({
   const { hasPermission, permissions } = usePermissions();
   const router = useRouter();
 
-  // If permissions haven't loaded yet (empty array from old session), show content
-  // The user will need to re-login to get permissions populated
-  if (permissions.length === 0) {
-    return <>{children}</>;
-  }
-
   if (!hasPermission(permission)) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
