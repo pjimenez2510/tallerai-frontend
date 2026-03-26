@@ -1,30 +1,36 @@
-export interface ReportSummaryCard {
-  label: string;
-  value: string | number;
-  change?: string;
-}
-
-export interface ReportTable {
-  headers: string[];
-  rows: (string | number)[][];
-}
-
 export interface WorkOrderReportParams {
   from?: string;
   to?: string;
+  status?: string;
 }
 
 export interface WorkOrderReport {
-  summary: ReportSummaryCard[];
-  table: ReportTable;
+  headers: string[];
+  rows: string[][];
+  summary: {
+    total: number;
+    completed: number;
+    avgDays: number;
+    revenue: number;
+  };
 }
 
 export interface InventoryReport {
-  summary: ReportSummaryCard[];
-  table: ReportTable;
+  headers: string[];
+  rows: string[][];
+  summary: {
+    totalProducts: number;
+    totalValue: number;
+    lowStock: number;
+  };
 }
 
 export interface ClientReport {
-  summary: ReportSummaryCard[];
-  table: ReportTable;
+  headers: string[];
+  rows: string[][];
+  summary: {
+    total: number;
+    withEmail: number;
+    withPhone: number;
+  };
 }

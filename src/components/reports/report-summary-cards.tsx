@@ -1,13 +1,16 @@
 'use client';
 
-import type { ReportSummaryCard } from '@/types/report.types';
+interface SummaryItem {
+  label: string;
+  value: string | number;
+}
 
 interface ReportSummaryCardsProps {
-  cards: ReportSummaryCard[];
+  cards: SummaryItem[];
 }
 
 export function ReportSummaryCards({ cards }: ReportSummaryCardsProps) {
-  if (!cards.length) return null;
+  if (!cards || !cards.length) return null;
 
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -22,11 +25,6 @@ export function ReportSummaryCards({ cards }: ReportSummaryCardsProps) {
           <p className="mt-1 text-xl font-bold text-[var(--color-text-primary)]">
             {card.value}
           </p>
-          {card.change && (
-            <p className="mt-0.5 text-[10px] text-[var(--color-text-secondary)]">
-              {card.change}
-            </p>
-          )}
         </div>
       ))}
     </div>

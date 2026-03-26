@@ -15,7 +15,6 @@ import {
   useInventoryReport,
   useClientsReport,
 } from '@/hooks/use-reports';
-import type { ReportTable as ReportTableType } from '@/types/report.types';
 
 type TabId = 'work-orders' | 'inventory' | 'clients';
 
@@ -25,7 +24,7 @@ const tabs: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: 'clients', label: 'Clientes', icon: Users },
 ];
 
-function downloadCsv(table: ReportTableType, filename: string) {
+function downloadCsv(data: { headers: string[]; rows: string[][] }, filename: string) {
   const escape = (val: string | number) => {
     const str = String(val);
     if (str.includes(',') || str.includes('"') || str.includes('\n')) {
@@ -35,8 +34,8 @@ function downloadCsv(table: ReportTableType, filename: string) {
   };
 
   const lines: string[] = [];
-  lines.push(table.headers.map(escape).join(','));
-  for (const row of table.rows) {
+  lines.push(data.headers.map(escape).join(','));
+  for (const row of data.rows) {
     lines.push(row.map(escape).join(','));
   }
 
@@ -104,7 +103,14 @@ function WorkOrdersTab() {
         </div>
       ) : data ? (
         <>
-          <ReportSummaryCards cards={data.summary} />
+          <ReportSummaryCards
+            cards={[
+              { label: 'Total OTs', value: data.summary.total },
+              { label: 'Completadas', value: data.summary.completed },
+              { label: 'Promedio días', value: data.summary.avgDays.toFixed(1) },
+              { label: 'Ingresos', value: `$${data.summary.revenue.toFixed(2)}` },
+            ]}
+          />
           <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
             <div className="flex items-center justify-between mb-3">
               <p className="text-sm font-semibold text-[var(--color-text-primary)]">
@@ -114,13 +120,13 @@ function WorkOrdersTab() {
                 variant="outline"
                 size="sm"
                 className="h-8 rounded-xl gap-1.5"
-                onClick={() => downloadCsv(data.table, 'ordenes-trabajo.csv')}
+                onClick={() => downloadCsv(data, 'ordenes-trabajo.csv')}
               >
                 <Download className="h-3.5 w-3.5" />
                 Exportar CSV
               </Button>
             </div>
-            <ReportTable table={data.table} />
+            <ReportTable table={data} />
           </div>
         </>
       ) : null}
@@ -144,7 +150,13 @@ function InventoryTab() {
         </div>
       ) : data ? (
         <>
-          <ReportSummaryCards cards={data.summary} />
+          <ReportSummaryCards
+            cards={[
+              { label: 'Total Productos', value: data.summary.totalProducts },
+              { label: 'Valor Total', value: `$${data.summary.totalValue.toFixed(2)}` },
+              { label: 'Stock Bajo', value: data.summary.lowStock },
+            ]}
+          />
           <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
             <div className="flex items-center justify-between mb-3">
               <p className="text-sm font-semibold text-[var(--color-text-primary)]">
@@ -154,13 +166,13 @@ function InventoryTab() {
                 variant="outline"
                 size="sm"
                 className="h-8 rounded-xl gap-1.5"
-                onClick={() => downloadCsv(data.table, 'inventario.csv')}
+                onClick={() => downloadCsv(data, 'inventario.csv')}
               >
                 <Download className="h-3.5 w-3.5" />
                 Exportar CSV
               </Button>
             </div>
-            <ReportTable table={data.table} />
+            <ReportTable table={data} />
           </div>
         </>
       ) : null}
@@ -184,7 +196,13 @@ function ClientsTab() {
         </div>
       ) : data ? (
         <>
-          <ReportSummaryCards cards={data.summary} />
+          <ReportSummaryCards
+            cards={[
+              { label: 'Total Clientes', value: data.summary.total },
+              { label: 'Con Email', value: data.summary.withEmail },
+              { label: 'Con Teléfono', value: data.summary.withPhone },
+            ]}
+          />
           <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
             <div className="flex items-center justify-between mb-3">
               <p className="text-sm font-semibold text-[var(--color-text-primary)]">
@@ -194,13 +212,13 @@ function ClientsTab() {
                 variant="outline"
                 size="sm"
                 className="h-8 rounded-xl gap-1.5"
-                onClick={() => downloadCsv(data.table, 'clientes.csv')}
+                onClick={() => downloadCsv(data, 'clientes.csv')}
               >
                 <Download className="h-3.5 w-3.5" />
                 Exportar CSV
               </Button>
             </div>
-            <ReportTable table={data.table} />
+            <ReportTable table={data} />
           </div>
         </>
       ) : null}

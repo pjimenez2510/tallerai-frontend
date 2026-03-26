@@ -1,9 +1,7 @@
 'use client';
 
-import type { ReportTable as ReportTableType } from '@/types/report.types';
-
 interface ReportTableProps {
-  table: ReportTableType;
+  table: { headers: string[]; rows: string[][] };
 }
 
 export function ReportTable({ table }: ReportTableProps) {
