@@ -7,10 +7,22 @@ import type {
   AddStockMovementRequest,
   InventoryReport,
 } from '@/types/product.types';
+import type { PaginatedResponse } from '@/types/pagination.types';
+
+export interface ProductsListParams {
+  page?: number;
+  limit?: number;
+}
 
 export const productsApi = {
-  list() {
-    return apiClient.get<Product[]>('/products');
+  list(params?: ProductsListParams) {
+    const query = new URLSearchParams();
+    if (params?.page) query.set('page', String(params.page));
+    if (params?.limit) query.set('limit', String(params.limit));
+    const qs = query.toString();
+    return apiClient.get<PaginatedResponse<Product>>(
+      `/products${qs ? `?${qs}` : ''}`,
+    );
   },
 
   search(query: string) {

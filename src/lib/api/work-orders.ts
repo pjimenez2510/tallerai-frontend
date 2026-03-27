@@ -15,11 +15,24 @@ import type {
   VehicleTimelineEntry,
   CreateSupplementRequest,
 } from '@/types/work-order.types';
+import type { PaginatedResponse } from '@/types/pagination.types';
+
+export interface WorkOrdersListParams {
+  status?: WorkOrderStatus;
+  page?: number;
+  limit?: number;
+}
 
 export const workOrdersApi = {
-  list(status?: WorkOrderStatus) {
-    const query = status ? `?status=${status}` : '';
-    return apiClient.get<WorkOrder[]>(`/work-orders${query}`);
+  list(params?: WorkOrdersListParams) {
+    const query = new URLSearchParams();
+    if (params?.status) query.set('status', params.status);
+    if (params?.page) query.set('page', String(params.page));
+    if (params?.limit) query.set('limit', String(params.limit));
+    const qs = query.toString();
+    return apiClient.get<PaginatedResponse<WorkOrder>>(
+      `/work-orders${qs ? `?${qs}` : ''}`,
+    );
   },
 
   getById(id: string) {

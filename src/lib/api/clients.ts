@@ -4,10 +4,22 @@ import type {
   CreateClientRequest,
   UpdateClientRequest,
 } from '@/types/client.types';
+import type { PaginatedResponse } from '@/types/pagination.types';
+
+export interface ClientsListParams {
+  page?: number;
+  limit?: number;
+}
 
 export const clientsApi = {
-  list() {
-    return apiClient.get<Client[]>('/clients');
+  list(params?: ClientsListParams) {
+    const query = new URLSearchParams();
+    if (params?.page) query.set('page', String(params.page));
+    if (params?.limit) query.set('limit', String(params.limit));
+    const qs = query.toString();
+    return apiClient.get<PaginatedResponse<Client>>(
+      `/clients${qs ? `?${qs}` : ''}`,
+    );
   },
 
   search(query: string) {

@@ -4,10 +4,22 @@ import type {
   CreateServiceRequest,
   UpdateServiceRequest,
 } from '@/types/service.types';
+import type { PaginatedResponse } from '@/types/pagination.types';
+
+export interface ServicesListParams {
+  page?: number;
+  limit?: number;
+}
 
 export const servicesApi = {
-  list() {
-    return apiClient.get<Service[]>('/services');
+  list(params?: ServicesListParams) {
+    const query = new URLSearchParams();
+    if (params?.page) query.set('page', String(params.page));
+    if (params?.limit) query.set('limit', String(params.limit));
+    const qs = query.toString();
+    return apiClient.get<PaginatedResponse<Service>>(
+      `/services${qs ? `?${qs}` : ''}`,
+    );
   },
 
   getById(id: string) {
