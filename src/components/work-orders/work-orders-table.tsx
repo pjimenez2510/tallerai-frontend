@@ -27,6 +27,7 @@ import { CreateWorkOrderDialog } from './create-work-order-dialog';
 import { WorkOrderDetailDialog } from './work-order-detail-dialog';
 import { useWorkOrders } from '@/hooks/use-work-orders';
 import { usePermissions } from '@/hooks/use-permissions';
+import { Pagination } from '@/components/shared/pagination';
 import type { WorkOrder, WorkOrderStatus } from '@/types/work-order.types';
 
 const statusConfig: Record<
@@ -59,17 +60,26 @@ const statusTabs: { value: WorkOrderStatus | 'all'; label: string }[] = [
   { value: 'entregado', label: 'Entregado' },
 ];
 
+const LIMIT = 20;
+
 export function WorkOrdersTable() {
   const [activeTab, setActiveTab] = useState<WorkOrderStatus | 'all'>('all');
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
   const [createOpen, setCreateOpen] = useState(false);
   const [selectedWO, setSelectedWO] = useState<WorkOrder | null>(null);
 
   const statusFilter = activeTab === 'all' ? undefined : activeTab;
-  const { data: workOrders, isLoading } = useWorkOrders(statusFilter);
+  const { data: workOrdersPage, isLoading } = useWorkOrders({
+    status: statusFilter,
+    page,
+    limit: LIMIT,
+  });
   const { hasPermission } = usePermissions();
 
   const canCreate = hasPermission('work_orders.create');
+
+  const workOrders = workOrdersPage?.items;
 
   const filtered = workOrders?.filter((wo) => {
     if (!search) return true;
@@ -125,7 +135,7 @@ export function WorkOrdersTable() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
           <p className="text-2xl font-bold text-[var(--color-text-primary)]">
-            {workOrders?.length ?? 0}
+            {workOrdersPage?.total ?? 0}
           </p>
           <p className="text-xs text-[var(--color-text-secondary)] mt-1">
             Total OTs
@@ -145,12 +155,12 @@ export function WorkOrdersTable() {
             {workOrders?.filter((wo) => wo.priority === 'urgente').length ?? 0}
           </p>
           <p className="text-xs text-[var(--color-text-secondary)] mt-1">
-            Urgentes
+            Urgentes (pág.)
           </p>
         </div>
         <div className="hidden sm:block rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
           <p className="text-2xl font-bold text-[var(--color-text-primary)]">
-            {filtered?.length ?? 0}
+            {search ? filtered?.length ?? 0 : workOrdersPage?.total ?? 0}
           </p>
           <p className="text-xs text-[var(--color-text-secondary)] mt-1">
             Resultados
@@ -163,7 +173,7 @@ export function WorkOrdersTable() {
         {statusTabs.map((tab) => (
           <button
             key={tab.value}
-            onClick={() => setActiveTab(tab.value)}
+            onClick={() => { setActiveTab(tab.value); setPage(1); }}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
               activeTab === tab.value
                 ? 'bg-[#1e3a5f] text-white'
@@ -309,6 +319,17 @@ export function WorkOrdersTable() {
           </TableBody>
         </Table>
       </div>
+
+      {/* Pagination */}
+      {workOrdersPage && !search && (
+        <Pagination
+          page={workOrdersPage.page}
+          totalPages={workOrdersPage.totalPages}
+          total={workOrdersPage.total}
+          limit={workOrdersPage.limit}
+          onPageChange={setPage}
+        />
+      )}
 
       <CreateWorkOrderDialog open={createOpen} onOpenChange={setCreateOpen} />
       <WorkOrderDetailDialog

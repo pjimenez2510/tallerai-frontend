@@ -121,7 +121,8 @@ export function WorkOrderDetailDialog({
   const removePart = useRemovePart();
   const addAttachment = useAddAttachment();
   const removeAttachment = useRemoveAttachment();
-  const { data: products } = useProducts();
+  const { data: productsPage } = useProducts({ limit: 200 });
+  const products = productsPage?.items;
   const { data: attachments, isLoading: loadingAttachments } = useWorkOrderAttachments(
     initialWorkOrder?.id ?? '',
   );

@@ -43,6 +43,7 @@ import {
   useReceivePurchase,
   useCancelPurchase,
 } from '@/hooks/use-purchases';
+import { Pagination } from '@/components/shared/pagination';
 import type { PurchaseOrder, PurchaseOrderStatus } from '@/types/purchase.types';
 
 const statusConfig: Record<
@@ -69,8 +70,11 @@ const statusConfig: Record<
   },
 };
 
+const LIMIT = 20;
+
 export function PurchasesTable() {
-  const { data: purchases, isLoading } = usePurchases();
+  const [page, setPage] = useState(1);
+  const { data: purchasesPage, isLoading } = usePurchases({ page, limit: LIMIT });
   const receivePurchase = useReceivePurchase();
   const cancelPurchase = useCancelPurchase();
 
@@ -78,6 +82,8 @@ export function PurchasesTable() {
   const [detailPurchase, setDetailPurchase] = useState<PurchaseOrder | null>(null);
   const [receivingPurchase, setReceivingPurchase] = useState<PurchaseOrder | null>(null);
   const [cancelingPurchase, setCancelingPurchase] = useState<PurchaseOrder | null>(null);
+
+  const purchases = purchasesPage?.items;
 
   async function handleReceive() {
     if (!receivingPurchase) return;
@@ -101,6 +107,7 @@ export function PurchasesTable() {
 
   const pendingCount = purchases?.filter((p) => p.status === 'pendiente').length ?? 0;
   const receivedCount = purchases?.filter((p) => p.status === 'recibida').length ?? 0;
+  const totalCount = purchasesPage?.total ?? 0;
 
   return (
     <>
@@ -128,7 +135,7 @@ export function PurchasesTable() {
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
           <p className="text-2xl font-bold text-[var(--color-text-primary)]">
-            {purchases?.length ?? 0}
+            {totalCount}
           </p>
           <p className="text-xs text-[var(--color-text-secondary)] mt-1">
             Total órdenes
@@ -291,6 +298,17 @@ export function PurchasesTable() {
           </TableBody>
         </Table>
       </div>
+
+      {/* Pagination */}
+      {purchasesPage && (
+        <Pagination
+          page={purchasesPage.page}
+          totalPages={purchasesPage.totalPages}
+          total={purchasesPage.total}
+          limit={purchasesPage.limit}
+          onPageChange={setPage}
+        />
+      )}
 
       {/* Create Dialog */}
       <CreatePurchaseDialog open={createOpen} onOpenChange={setCreateOpen} />

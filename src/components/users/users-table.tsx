@@ -41,10 +41,14 @@ import {
 } from '@/hooks/use-users';
 import { useAuthStore } from '@/stores/auth.store';
 import { usePermissions } from '@/hooks/use-permissions';
+import { Pagination } from '@/components/shared/pagination';
 import type { WorkshopUser } from '@/types/user.types';
 
+const LIMIT = 20;
+
 export function UsersTable() {
-  const { data: users, isLoading } = useUsers();
+  const [page, setPage] = useState(1);
+  const { data: usersPage, isLoading } = useUsers({ page, limit: LIMIT });
   const deactivateUser = useDeactivateUser();
   const activateUser = useActivateUser();
   const currentUser = useAuthStore((s) => s.user);
@@ -59,6 +63,8 @@ export function UsersTable() {
   const [editingUser, setEditingUser] = useState<WorkshopUser | null>(null);
   const [deactivatingUser, setDeactivatingUser] =
     useState<WorkshopUser | null>(null);
+
+  const users = usersPage?.items;
 
   const filtered = users?.filter((u) => {
     if (!search) return true;
@@ -131,7 +137,7 @@ export function UsersTable() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
           <p className="text-2xl font-bold text-[var(--color-text-primary)]">
-            {users?.length ?? 0}
+            {usersPage?.total ?? 0}
           </p>
           <p className="text-xs text-[var(--color-text-secondary)] mt-1">
             Total usuarios
@@ -155,7 +161,7 @@ export function UsersTable() {
         </div>
         <div className="hidden sm:block rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
           <p className="text-2xl font-bold text-[var(--color-text-primary)]">
-            {filtered?.length ?? 0}
+            {search ? filtered?.length ?? 0 : usersPage?.total ?? 0}
           </p>
           <p className="text-xs text-[var(--color-text-secondary)] mt-1">
             Resultados
@@ -310,6 +316,17 @@ export function UsersTable() {
           </TableBody>
         </Table>
       </div>
+
+      {/* Pagination */}
+      {usersPage && !search && (
+        <Pagination
+          page={usersPage.page}
+          totalPages={usersPage.totalPages}
+          total={usersPage.total}
+          limit={usersPage.limit}
+          onPageChange={setPage}
+        />
+      )}
 
       {/* Form Dialog */}
       <UserFormDialog

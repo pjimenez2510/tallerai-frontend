@@ -51,7 +51,8 @@ export function CreatePurchaseDialog({
   onOpenChange,
 }: CreatePurchaseDialogProps) {
   const createPurchase = useCreatePurchase();
-  const { data: products } = useProducts();
+  const { data: productsPage } = useProducts({ limit: 200 });
+  const products = productsPage?.items;
 
   const [items, setItems] = useState<PurchaseItem[]>([]);
   const [productSearch, setProductSearch] = useState('');

@@ -36,10 +36,14 @@ import {
 import { ProductFormDialog } from './product-form-dialog';
 import { useProducts, useDeactivateProduct, useInventoryReport } from '@/hooks/use-products';
 import { usePermissions } from '@/hooks/use-permissions';
+import { Pagination } from '@/components/shared/pagination';
 import type { Product } from '@/types/product.types';
 
+const LIMIT = 20;
+
 export function InventoryTable() {
-  const { data: products, isLoading } = useProducts();
+  const [page, setPage] = useState(1);
+  const { data: productsPage, isLoading } = useProducts({ page, limit: LIMIT });
   const { data: report } = useInventoryReport();
   const deactivateProduct = useDeactivateProduct();
   const { hasPermission } = usePermissions();
@@ -52,6 +56,8 @@ export function InventoryTable() {
   const [formOpen, setFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
+
+  const products = productsPage?.items;
 
   const filtered = products?.filter((p) => {
     if (!search) return true;
@@ -357,6 +363,17 @@ export function InventoryTable() {
           </TableBody>
         </Table>
       </div>
+
+      {/* Pagination */}
+      {productsPage && !search && (
+        <Pagination
+          page={productsPage.page}
+          totalPages={productsPage.totalPages}
+          total={productsPage.total}
+          limit={productsPage.limit}
+          onPageChange={setPage}
+        />
+      )}
 
       {/* Form Dialog */}
       <ProductFormDialog

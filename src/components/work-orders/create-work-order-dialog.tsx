@@ -81,15 +81,15 @@ export function CreateWorkOrderDialog({
     enabled: !!selectedClientId,
   });
 
-  const { data: users } = useQuery({
-    queryKey: ['users'],
+  const { data: usersPage } = useQuery({
+    queryKey: ['users', 1, 200],
     queryFn: async () => {
-      const response = await usersApi.list();
+      const response = await usersApi.list({ limit: 200 });
       return response.data;
     },
   });
 
-  const mechanics = users?.filter(
+  const mechanics = usersPage?.items.filter(
     (u) =>
       u.isActive &&
       (u.roleSlug === 'mecanico' || u.roleSlug === 'jefe_taller'),
