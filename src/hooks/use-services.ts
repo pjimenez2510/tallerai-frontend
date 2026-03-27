@@ -9,11 +9,16 @@ import type {
 } from '@/types/service.types';
 import { ApiError } from '@/types/api.types';
 
-export function useServices() {
+export interface UseServicesParams {
+  page?: number;
+  limit?: number;
+}
+
+export function useServices(params?: UseServicesParams) {
   return useQuery({
-    queryKey: ['services'],
+    queryKey: ['services', params?.page ?? 1, params?.limit ?? 20],
     queryFn: async () => {
-      const response = await servicesApi.list();
+      const response = await servicesApi.list(params);
       return response.data;
     },
   });

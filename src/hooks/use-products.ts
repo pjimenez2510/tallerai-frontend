@@ -11,11 +11,16 @@ import type {
 
 import { ApiError } from '@/types/api.types';
 
-export function useProducts() {
+export interface UseProductsParams {
+  page?: number;
+  limit?: number;
+}
+
+export function useProducts(params?: UseProductsParams) {
   return useQuery({
-    queryKey: ['products'],
+    queryKey: ['products', params?.page ?? 1, params?.limit ?? 20],
     queryFn: async () => {
-      const response = await productsApi.list();
+      const response = await productsApi.list(params);
       return response.data;
     },
   });
