@@ -4,10 +4,22 @@ import type {
   CreateVehicleRequest,
   UpdateVehicleRequest,
 } from '@/types/vehicle.types';
+import type { PaginatedResponse } from '@/types/pagination.types';
+
+export interface VehiclesListParams {
+  page?: number;
+  limit?: number;
+}
 
 export const vehiclesApi = {
-  list() {
-    return apiClient.get<Vehicle[]>('/vehicles');
+  list(params?: VehiclesListParams) {
+    const query = new URLSearchParams();
+    if (params?.page) query.set('page', String(params.page));
+    if (params?.limit) query.set('limit', String(params.limit));
+    const qs = query.toString();
+    return apiClient.get<PaginatedResponse<Vehicle>>(
+      `/vehicles${qs ? `?${qs}` : ''}`,
+    );
   },
 
   search(query: string) {

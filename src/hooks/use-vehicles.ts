@@ -20,11 +20,16 @@ export function useVehicle(id: string) {
   });
 }
 
-export function useVehicles() {
+export interface UseVehiclesParams {
+  page?: number;
+  limit?: number;
+}
+
+export function useVehicles(params?: UseVehiclesParams) {
   return useQuery({
-    queryKey: ['vehicles'],
+    queryKey: ['vehicles', params?.page ?? 1, params?.limit ?? 20],
     queryFn: async () => {
-      const response = await vehiclesApi.list();
+      const response = await vehiclesApi.list(params);
       return response.data;
     },
   });

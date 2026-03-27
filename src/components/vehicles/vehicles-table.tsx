@@ -36,11 +36,15 @@ import {
 import { VehicleFormDialog } from './vehicle-form-dialog';
 import { useVehicles, useDeactivateVehicle } from '@/hooks/use-vehicles';
 import { usePermissions } from '@/hooks/use-permissions';
+import { Pagination } from '@/components/shared/pagination';
 import type { Vehicle } from '@/types/vehicle.types';
+
+const LIMIT = 20;
 
 export function VehiclesTable() {
   const router = useRouter();
-  const { data: vehicles, isLoading } = useVehicles();
+  const [page, setPage] = useState(1);
+  const { data: vehiclesPage, isLoading } = useVehicles({ page, limit: LIMIT });
   const deactivateVehicle = useDeactivateVehicle();
   const { hasPermission } = usePermissions();
 
@@ -52,6 +56,8 @@ export function VehiclesTable() {
   const [formOpen, setFormOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
   const [deletingVehicle, setDeletingVehicle] = useState<Vehicle | null>(null);
+
+  const vehicles = vehiclesPage?.items;
 
   const filtered = vehicles?.filter((v) => {
     if (!search) return true;
@@ -117,7 +123,7 @@ export function VehiclesTable() {
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
           <p className="text-2xl font-bold text-[var(--color-text-primary)]">
-            {vehicles?.length ?? 0}
+            {vehiclesPage?.total ?? 0}
           </p>
           <p className="text-xs text-[var(--color-text-secondary)] mt-1">
             Vehículos activos
@@ -133,7 +139,7 @@ export function VehiclesTable() {
         </div>
         <div className="hidden sm:block rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
           <p className="text-2xl font-bold text-[var(--color-text-primary)]">
-            {filtered?.length ?? 0}
+            {search ? filtered?.length ?? 0 : vehiclesPage?.total ?? 0}
           </p>
           <p className="text-xs text-[var(--color-text-secondary)] mt-1">
             Resultados
@@ -309,6 +315,17 @@ export function VehiclesTable() {
           </TableBody>
         </Table>
       </div>
+
+      {/* Pagination */}
+      {vehiclesPage && !search && (
+        <Pagination
+          page={vehiclesPage.page}
+          totalPages={vehiclesPage.totalPages}
+          total={vehiclesPage.total}
+          limit={vehiclesPage.limit}
+          onPageChange={setPage}
+        />
+      )}
 
       {/* Form Dialog */}
       <VehicleFormDialog

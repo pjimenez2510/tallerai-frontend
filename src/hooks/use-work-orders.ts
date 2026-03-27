@@ -15,11 +15,22 @@ import type {
 } from '@/types/work-order.types';
 import { ApiError } from '@/types/api.types';
 
-export function useWorkOrders(status?: WorkOrderStatus) {
+export interface UseWorkOrdersParams {
+  status?: WorkOrderStatus;
+  page?: number;
+  limit?: number;
+}
+
+export function useWorkOrders(params?: UseWorkOrdersParams) {
   return useQuery({
-    queryKey: ['work-orders', status ?? 'all'],
+    queryKey: [
+      'work-orders',
+      params?.status ?? 'all',
+      params?.page ?? 1,
+      params?.limit ?? 20,
+    ],
     queryFn: async () => {
-      const response = await workOrdersApi.list(status);
+      const response = await workOrdersApi.list(params);
       return response.data;
     },
   });

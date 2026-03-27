@@ -34,6 +34,7 @@ import {
 import { ClientFormDialog } from './client-form-dialog';
 import { useClients, useDeactivateClient } from '@/hooks/use-clients';
 import { usePermissions } from '@/hooks/use-permissions';
+import { Pagination } from '@/components/shared/pagination';
 import type { Client } from '@/types/client.types';
 
 const docTypeLabels: Record<string, string> = {
@@ -42,9 +43,12 @@ const docTypeLabels: Record<string, string> = {
   pasaporte: 'Pasaporte',
 };
 
+const LIMIT = 20;
+
 export function ClientsTable() {
   const router = useRouter();
-  const { data: clients, isLoading } = useClients();
+  const [page, setPage] = useState(1);
+  const { data: clientsPage, isLoading } = useClients({ page, limit: LIMIT });
   const deactivateClient = useDeactivateClient();
   const { hasPermission } = usePermissions();
 
@@ -56,6 +60,8 @@ export function ClientsTable() {
   const [formOpen, setFormOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [deletingClient, setDeletingClient] = useState<Client | null>(null);
+
+  const clients = clientsPage?.items;
 
   const filtered = clients?.filter((c) => {
     if (!search) return true;
@@ -121,7 +127,7 @@ export function ClientsTable() {
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
           <p className="text-2xl font-bold text-[var(--color-text-primary)]">
-            {clients?.length ?? 0}
+            {clientsPage?.total ?? 0}
           </p>
           <p className="text-xs text-[var(--color-text-secondary)] mt-1">
             Clientes activos
@@ -137,7 +143,7 @@ export function ClientsTable() {
         </div>
         <div className="hidden sm:block rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
           <p className="text-2xl font-bold text-[var(--color-text-primary)]">
-            {filtered?.length ?? 0}
+            {search ? filtered?.length ?? 0 : clientsPage?.total ?? 0}
           </p>
           <p className="text-xs text-[var(--color-text-secondary)] mt-1">
             Resultados
@@ -286,6 +292,17 @@ export function ClientsTable() {
           </TableBody>
         </Table>
       </div>
+
+      {/* Pagination */}
+      {clientsPage && !search && (
+        <Pagination
+          page={clientsPage.page}
+          totalPages={clientsPage.totalPages}
+          total={clientsPage.total}
+          limit={clientsPage.limit}
+          onPageChange={setPage}
+        />
+      )}
 
       {/* Form Dialog */}
       <ClientFormDialog

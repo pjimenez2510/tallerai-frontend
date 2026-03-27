@@ -6,11 +6,16 @@ import { usersApi } from '@/lib/api/users';
 import type { CreateUserRequest, UpdateUserRequest } from '@/types/user.types';
 import { ApiError } from '@/types/api.types';
 
-export function useUsers() {
+export interface UseUsersParams {
+  page?: number;
+  limit?: number;
+}
+
+export function useUsers(params?: UseUsersParams) {
   return useQuery({
-    queryKey: ['users'],
+    queryKey: ['users', params?.page ?? 1, params?.limit ?? 20],
     queryFn: async () => {
-      const response = await usersApi.list();
+      const response = await usersApi.list(params);
       return response.data;
     },
   });

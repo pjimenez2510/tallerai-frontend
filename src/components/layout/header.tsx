@@ -1,15 +1,16 @@
 'use client';
 
 import { useRouter, usePathname } from 'next/navigation';
-import { LogOut, Search } from 'lucide-react';
+import { LogOut, Moon, Sun } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { NotificationCenter } from '@/components/notifications/notification-center';
+import { GlobalSearch } from '@/components/shared/global-search';
 import { useAuthStore } from '@/stores/auth.store';
 import { authApi } from '@/lib/api/auth';
+import { useTheme } from '@/hooks/use-theme';
 
 const pageNames: Record<string, string> = {
   '/work-orders': 'Órdenes de Trabajo',
@@ -29,6 +30,7 @@ export function Header() {
   const user = useAuthStore((s) => s.user);
   const refreshToken = useAuthStore((s) => s.refreshToken);
   const logout = useAuthStore((s) => s.logout);
+  const { theme, toggle } = useTheme();
 
   const currentPage =
     Object.entries(pageNames).find(([path]) =>
@@ -62,17 +64,26 @@ export function Header() {
 
       {/* Search bar */}
       <div className="hidden md:flex flex-1 max-w-md mx-8">
-        <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-text-secondary)]" />
-          <Input
-            placeholder="Buscar clientes, vehículos, OTs..."
-            className="h-9 pl-10 rounded-xl bg-[var(--color-bg-secondary)] border-transparent focus-visible:border-[var(--color-border)]"
-          />
-        </div>
+        <GlobalSearch />
       </div>
 
       {/* Right side */}
       <div className="flex items-center gap-2">
+        {/* Dark mode toggle */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggle}
+          className="text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+          aria-label={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+        >
+          {theme === 'dark' ? (
+            <Sun className="h-4 w-4" />
+          ) : (
+            <Moon className="h-4 w-4" />
+          )}
+        </Button>
+
         <NotificationCenter />
 
         {/* User badge */}

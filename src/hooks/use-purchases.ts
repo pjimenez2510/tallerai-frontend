@@ -6,11 +6,16 @@ import { purchasesApi } from '@/lib/api/purchases';
 import type { CreatePurchaseOrderRequest } from '@/types/purchase.types';
 import { ApiError } from '@/types/api.types';
 
-export function usePurchases() {
+export interface UsePurchasesParams {
+  page?: number;
+  limit?: number;
+}
+
+export function usePurchases(params?: UsePurchasesParams) {
   return useQuery({
-    queryKey: ['purchases'],
+    queryKey: ['purchases', params?.page ?? 1, params?.limit ?? 20],
     queryFn: async () => {
-      const response = await purchasesApi.list();
+      const response = await purchasesApi.list(params);
       return response.data;
     },
   });

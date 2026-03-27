@@ -32,16 +32,22 @@ import {
 } from '@/components/ui/alert-dialog';
 import { ServiceFormDialog } from './service-form-dialog';
 import { useServices, useDeactivateService } from '@/hooks/use-services';
+import { Pagination } from '@/components/shared/pagination';
 import type { Service } from '@/types/service.types';
 
+const LIMIT = 20;
+
 export function ServicesTable() {
-  const { data: services, isLoading } = useServices();
+  const [page, setPage] = useState(1);
+  const { data: servicesPage, isLoading } = useServices({ page, limit: LIMIT });
   const deactivateService = useDeactivateService();
 
   const [search, setSearch] = useState('');
   const [formOpen, setFormOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [deletingService, setDeletingService] = useState<Service | null>(null);
+
+  const services = servicesPage?.items;
 
   const filtered = services?.filter((s) => {
     if (!search) return true;
@@ -53,10 +59,11 @@ export function ServicesTable() {
     );
   });
 
-  const totalServices = services?.length ?? 0;
+  const totalServices = servicesPage?.total ?? 0;
   const avgPrice =
-    totalServices > 0
-      ? (services?.reduce((sum, s) => sum + s.price, 0) ?? 0) / totalServices
+    (services?.length ?? 0) > 0
+      ? (services?.reduce((sum, s) => sum + s.price, 0) ?? 0) /
+        (services?.length ?? 1)
       : 0;
 
   function handleEdit(service: Service) {
@@ -126,7 +133,7 @@ export function ServicesTable() {
         </div>
         <div className="hidden sm:block rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
           <p className="text-2xl font-bold text-[var(--color-text-primary)]">
-            {filtered?.length ?? 0}
+            {search ? filtered?.length ?? 0 : servicesPage?.total ?? 0}
           </p>
           <p className="text-xs text-[var(--color-text-secondary)] mt-1">
             Resultados
@@ -240,6 +247,17 @@ export function ServicesTable() {
           </TableBody>
         </Table>
       </div>
+
+      {/* Pagination */}
+      {servicesPage && !search && (
+        <Pagination
+          page={servicesPage.page}
+          totalPages={servicesPage.totalPages}
+          total={servicesPage.total}
+          limit={servicesPage.limit}
+          onPageChange={setPage}
+        />
+      )}
 
       {/* Form Dialog */}
       <ServiceFormDialog

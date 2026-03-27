@@ -4,10 +4,22 @@ import type {
   CreateUserRequest,
   UpdateUserRequest,
 } from '@/types/user.types';
+import type { PaginatedResponse } from '@/types/pagination.types';
+
+export interface UsersListParams {
+  page?: number;
+  limit?: number;
+}
 
 export const usersApi = {
-  list() {
-    return apiClient.get<WorkshopUser[]>('/users');
+  list(params?: UsersListParams) {
+    const query = new URLSearchParams();
+    if (params?.page) query.set('page', String(params.page));
+    if (params?.limit) query.set('limit', String(params.limit));
+    const qs = query.toString();
+    return apiClient.get<PaginatedResponse<WorkshopUser>>(
+      `/users${qs ? `?${qs}` : ''}`,
+    );
   },
 
   getById(id: string) {
