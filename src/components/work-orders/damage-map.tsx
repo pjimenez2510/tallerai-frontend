@@ -1,15 +1,15 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   CircleDot,
   Trash2,
-  Save,
-  Plus,
+  Move,
   AlertTriangle,
+  Check,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
@@ -46,6 +46,8 @@ interface DamageMapData {
   template: string;
 }
 
+type Mode = 'agregar' | 'mover' | null;
+
 const SEVERITY_CONFIG = {
   leve: { label: 'Leve', color: 'bg-green-500', ring: 'ring-green-300', text: 'text-green-700', bg: 'bg-green-50' },
   moderado: { label: 'Moderado', color: 'bg-yellow-500', ring: 'ring-yellow-300', text: 'text-yellow-700', bg: 'bg-yellow-50' },
@@ -65,20 +67,71 @@ export function DamageMap({
   damageNotes: initialNotes,
   onSaved,
 }: DamageMapProps) {
-  const imageRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const updateWorkOrder = useUpdateWorkOrder();
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasChangesRef = useRef(false);
 
   const [markers, setMarkers] = useState<DamageMarker[]>(
     damageMap?.markers ?? [],
   );
   const [notes, setNotes] = useState(initialNotes ?? '');
+  const [mode, setMode] = useState<Mode>(null);
   const [selectedSeverity, setSelectedSeverity] = useState<DamageMarker['severity']>('moderado');
   const [selectedMarker, setSelectedMarker] = useState<string | null>(null);
   const [editingDescription, setEditingDescription] = useState('');
-  const [isPlacing, setIsPlacing] = useState(false);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  // Auto-save with debounce
+  const autoSave = useCallback(
+    async (newMarkers: DamageMarker[], newNotes: string) => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+
+      saveTimerRef.current = setTimeout(async () => {
+        setSaving(true);
+        try {
+          await updateWorkOrder.mutateAsync({
+            id: workOrderId,
+            data: {
+              damageMap: { markers: newMarkers, template: 'default' } as unknown as Record<string, unknown>,
+              damageNotes: newNotes || undefined,
+            },
+          });
+          hasChangesRef.current = false;
+          onSaved();
+        } catch {
+          // toast.error handled by hook
+        } finally {
+          setSaving(false);
+        }
+      }, 1500);
+    },
+    [workOrderId, updateWorkOrder, onSaved],
+  );
+
+  // Trigger auto-save when markers or notes change
+  function updateMarkers(newMarkers: DamageMarker[]) {
+    setMarkers(newMarkers);
+    hasChangesRef.current = true;
+    autoSave(newMarkers, notes);
+  }
+
+  function updateNotes(newNotes: string) {
+    setNotes(newNotes);
+    hasChangesRef.current = true;
+    autoSave(markers, newNotes);
+  }
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, []);
 
   function handleImageClick(e: React.MouseEvent<HTMLDivElement>) {
-    if (!isPlacing) return;
+    if (mode !== 'agregar') return;
 
     const rect = e.currentTarget.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * 100;
@@ -92,71 +145,102 @@ export function DamageMap({
       description: '',
     };
 
-    setMarkers([...markers, newMarker]);
+    const newMarkers = [...markers, newMarker];
+    updateMarkers(newMarkers);
     setSelectedMarker(newMarker.id);
     setEditingDescription('');
-    setIsPlacing(false);
+    // Mode stays as 'agregar' — user can keep placing
+  }
+
+  // Drag handling for move mode
+  function handleMarkerMouseDown(e: React.MouseEvent, markerId: string) {
+    if (mode !== 'mover') return;
+    e.preventDefault();
+    e.stopPropagation();
+    setDraggingId(markerId);
+  }
+
+  function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
+    if (mode !== 'mover' || !draggingId || !containerRef.current) return;
+
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = Math.min(100, Math.max(0, ((e.clientX - rect.left) / rect.width) * 100));
+    const y = Math.min(100, Math.max(0, ((e.clientY - rect.top) / rect.height) * 100));
+
+    setMarkers((prev) =>
+      prev.map((m) =>
+        m.id === draggingId
+          ? { ...m, x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10 }
+          : m,
+      ),
+    );
+  }
+
+  function handleMouseUp() {
+    if (draggingId) {
+      // Save after drag ends
+      hasChangesRef.current = true;
+      autoSave(markers, notes);
+      setDraggingId(null);
+    }
   }
 
   function handleUpdateDescription(id: string) {
-    setMarkers(
-      markers.map((m) =>
-        m.id === id ? { ...m, description: editingDescription } : m,
-      ),
+    const newMarkers = markers.map((m) =>
+      m.id === id ? { ...m, description: editingDescription } : m,
     );
+    updateMarkers(newMarkers);
     setSelectedMarker(null);
   }
 
   function handleDeleteMarker(id: string) {
-    setMarkers(markers.filter((m) => m.id !== id));
+    const newMarkers = markers.filter((m) => m.id !== id);
+    updateMarkers(newMarkers);
     if (selectedMarker === id) setSelectedMarker(null);
   }
 
-  async function handleSave() {
-    const data: DamageMapData = {
-      markers,
-      template: 'default',
-    };
-
-    await updateWorkOrder.mutateAsync({
-      id: workOrderId,
-      data: {
-        damageMap: data as unknown as Record<string, unknown>,
-        damageNotes: notes || undefined,
-      },
-    });
-    onSaved();
+  function toggleMode(newMode: Mode) {
+    setMode(mode === newMode ? null : newMode);
+    setDraggingId(null);
   }
 
   return (
     <div className="space-y-4">
-      {/* Toolbar */}
+      {/* Mode toggles + severity (compact toolbar) */}
       <div className="flex flex-wrap items-center gap-2">
-        <Button
+        {/* Agregar toggle */}
+        <button
           type="button"
-          variant={isPlacing ? 'default' : 'outline'}
-          size="sm"
+          onClick={() => toggleMode('agregar')}
           className={cn(
-            'rounded-xl gap-1.5',
-            isPlacing && 'bg-[#1e3a5f] text-white',
+            'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all',
+            mode === 'agregar'
+              ? 'bg-[#1e3a5f] text-white border-[#1e3a5f]'
+              : 'border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-text-secondary)]',
           )}
-          onClick={() => setIsPlacing(!isPlacing)}
         >
-          {isPlacing ? (
-            <>
-              <CircleDot className="h-3.5 w-3.5 animate-pulse" />
-              Click en la imagen...
-            </>
-          ) : (
-            <>
-              <Plus className="h-3.5 w-3.5" />
-              Agregar daño
-            </>
-          )}
-        </Button>
+          <CircleDot className="h-3.5 w-3.5" />
+          Agregar
+        </button>
 
-        {isPlacing && (
-          <div className="flex gap-1">
+        {/* Mover toggle */}
+        <button
+          type="button"
+          onClick={() => toggleMode('mover')}
+          className={cn(
+            'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all',
+            mode === 'mover'
+              ? 'bg-[#2563eb] text-white border-[#2563eb]'
+              : 'border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-text-secondary)]',
+          )}
+        >
+          <Move className="h-3.5 w-3.5" />
+          Mover
+        </button>
+
+        {/* Severity selector — always visible in agregar mode */}
+        {mode === 'agregar' && (
+          <div className="flex gap-1 ml-1">
             {(Object.entries(SEVERITY_CONFIG) as [DamageMarker['severity'], (typeof SEVERITY_CONFIG)['leve']][]).map(
               ([key, config]) => (
                 <button
@@ -164,10 +248,10 @@ export function DamageMap({
                   type="button"
                   onClick={() => setSelectedSeverity(key)}
                   className={cn(
-                    'px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors',
+                    'px-2 py-1 rounded-md text-[11px] font-medium border transition-colors',
                     selectedSeverity === key
                       ? `${config.bg} ${config.text} border-current`
-                      : 'border-[var(--color-border)] text-[var(--color-text-secondary)]',
+                      : 'border-transparent text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)]',
                   )}
                 >
                   {config.label}
@@ -177,59 +261,83 @@ export function DamageMap({
           </div>
         )}
 
+        {/* Auto-save indicator */}
         <div className="ml-auto">
-          <Button
-            type="button"
-            size="sm"
-            className="rounded-xl bg-[#1e3a5f] text-white hover:bg-[#162d4a] gap-1.5"
-            onClick={handleSave}
-            disabled={updateWorkOrder.isPending}
-          >
-            <Save className="h-3.5 w-3.5" />
-            Guardar
-          </Button>
+          {saving ? (
+            <span className="flex items-center gap-1 text-[10px] text-[var(--color-text-secondary)]">
+              <span className="h-3 w-3 animate-spin rounded-full border-2 border-[var(--color-primary)] border-t-transparent" />
+              Guardando...
+            </span>
+          ) : hasChangesRef.current ? null : markers.length > 0 ? (
+            <span className="flex items-center gap-1 text-[10px] text-green-600">
+              <Check className="h-3 w-3" />
+              Guardado
+            </span>
+          ) : null}
         </div>
       </div>
 
+      {/* Hint text */}
+      {mode === 'agregar' && (
+        <p className="text-xs text-[#1e3a5f] bg-[#1e3a5f]/5 px-3 py-1.5 rounded-lg">
+          Toca la imagen para marcar un daño. Puedes seguir agregando varios.
+        </p>
+      )}
+      {mode === 'mover' && (
+        <p className="text-xs text-[#2563eb] bg-[#2563eb]/5 px-3 py-1.5 rounded-lg">
+          Arrastra los marcadores para cambiar su posición.
+        </p>
+      )}
+
       {/* Vehicle image with markers */}
       <div
-        ref={imageRef}
+        ref={containerRef}
         className={cn(
-          'relative rounded-xl border-2 border-dashed border-[var(--color-border)] bg-white overflow-hidden mx-auto',
-          isPlacing && 'cursor-crosshair border-[#1e3a5f]',
+          'relative rounded-xl border-2 bg-white overflow-hidden mx-auto select-none',
+          mode === 'agregar' && 'cursor-crosshair border-[#1e3a5f] border-solid',
+          mode === 'mover' && 'cursor-grab border-[#2563eb] border-solid',
+          !mode && 'border-dashed border-[var(--color-border)]',
         )}
         style={{ maxWidth: 300, aspectRatio: '200/450' }}
         onClick={handleImageClick}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
       >
         <img
           src={DEFAULT_VEHICLE_SVG}
           alt="Vista superior del vehículo"
-          className="w-full h-full object-contain pointer-events-none select-none"
+          className="w-full h-full object-contain pointer-events-none"
           draggable={false}
         />
 
         {markers.map((marker, index) => {
           const config = SEVERITY_CONFIG[marker.severity];
           const isSelected = selectedMarker === marker.id;
+          const isDragging = draggingId === marker.id;
 
           return (
-            <button
+            <div
               key={marker.id}
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setSelectedMarker(isSelected ? null : marker.id);
-                setEditingDescription(marker.description);
-              }}
               className={cn(
                 'absolute flex items-center justify-center h-7 w-7 -ml-3.5 -mt-3.5 rounded-full text-white text-xs font-bold shadow-lg transition-transform',
                 config.color,
                 isSelected && `ring-3 ${config.ring} scale-125`,
+                isDragging && 'scale-150 opacity-80',
+                mode === 'mover' && 'cursor-grab active:cursor-grabbing',
               )}
               style={{ left: `${marker.x}%`, top: `${marker.y}%` }}
+              onMouseDown={(e) => handleMarkerMouseDown(e, marker.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (mode !== 'mover') {
+                  setSelectedMarker(isSelected ? null : marker.id);
+                  setEditingDescription(marker.description);
+                }
+              }}
             >
               {index + 1}
-            </button>
+            </div>
           );
         })}
       </div>
@@ -247,34 +355,33 @@ export function DamageMap({
               <Badge className={cn(config.color, 'text-white')}>
                 #{index + 1} — {config.label}
               </Badge>
-              <Button
+              <button
                 type="button"
-                variant="ghost"
-                size="icon-sm"
                 onClick={() => handleDeleteMarker(marker.id)}
-                className="text-red-500 hover:text-red-700 hover:bg-red-100"
+                className="p-1 rounded-md text-red-500 hover:text-red-700 hover:bg-red-100 transition-colors"
               >
                 <Trash2 className="h-3.5 w-3.5" />
-              </Button>
+              </button>
             </div>
             <div className="flex gap-2">
               <Input
                 value={editingDescription}
                 onChange={(e) => setEditingDescription(e.target.value)}
-                placeholder="Describe el daño (ej: Rayón en puerta derecha)"
+                placeholder="Describe el daño..."
                 className="h-9 rounded-lg text-sm bg-white text-[var(--color-text-primary)]"
+                autoFocus
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleUpdateDescription(marker.id);
+                  if (e.key === 'Escape') setSelectedMarker(null);
                 }}
               />
-              <Button
+              <button
                 type="button"
-                size="sm"
-                className="rounded-lg h-9 bg-[#1e3a5f] text-white"
+                className="flex items-center justify-center h-9 w-9 rounded-lg bg-[#1e3a5f] text-white shrink-0"
                 onClick={() => handleUpdateDescription(marker.id)}
               >
-                OK
-              </Button>
+                <Check className="h-4 w-4" />
+              </button>
             </div>
           </div>
         );
@@ -282,65 +389,59 @@ export function DamageMap({
 
       {/* Markers list */}
       {markers.length > 0 && (
-        <div className="space-y-1.5">
-          <p className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
-            Daños registrados ({markers.length})
-          </p>
-          <div className="space-y-1">
-            {markers.map((marker, index) => {
-              const config = SEVERITY_CONFIG[marker.severity];
-              return (
-                <div
-                  key={marker.id}
-                  className={cn(
-                    'flex items-center gap-2 rounded-lg px-3 py-2 text-sm cursor-pointer transition-colors',
-                    selectedMarker === marker.id
-                      ? `${config.bg} ${config.text}`
-                      : 'hover:bg-[var(--color-bg-secondary)]',
-                  )}
-                  onClick={() => {
-                    setSelectedMarker(marker.id);
-                    setEditingDescription(marker.description);
+        <div className="space-y-1">
+          {markers.map((marker, index) => {
+            const config = SEVERITY_CONFIG[marker.severity];
+            return (
+              <div
+                key={marker.id}
+                className={cn(
+                  'flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm cursor-pointer transition-colors',
+                  selectedMarker === marker.id
+                    ? `${config.bg} ${config.text}`
+                    : 'hover:bg-[var(--color-bg-secondary)]',
+                )}
+                onClick={() => {
+                  setSelectedMarker(marker.id);
+                  setEditingDescription(marker.description);
+                }}
+              >
+                <span className={cn('flex h-5 w-5 items-center justify-center rounded-full text-white text-[10px] font-bold shrink-0', config.color)}>
+                  {index + 1}
+                </span>
+                <span className="flex-1 truncate text-xs">
+                  {marker.description || 'Sin descripción'}
+                </span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteMarker(marker.id);
                   }}
+                  className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-[var(--color-text-secondary)] hover:text-red-500"
                 >
-                  <span className={cn('flex h-5 w-5 items-center justify-center rounded-full text-white text-[10px] font-bold', config.color)}>
-                    {index + 1}
-                  </span>
-                  <span className="flex-1 truncate">
-                    {marker.description || 'Sin descripción'}
-                  </span>
-                  <Badge variant="outline" className="text-[10px]">
-                    {config.label}
-                  </Badge>
-                </div>
-              );
-            })}
-          </div>
+                  <Trash2 className="h-3 w-3" />
+                </button>
+              </div>
+            );
+          })}
         </div>
       )}
 
-      {markers.length === 0 && !isPlacing && (
-        <div className="text-center py-6 text-sm text-[var(--color-text-secondary)]">
-          <AlertTriangle className="h-8 w-8 mx-auto mb-2 opacity-30" />
-          <p>No hay daños registrados</p>
-          <p className="text-xs mt-1">
-            Haz click en &quot;Agregar daño&quot; y luego en la imagen del vehículo
-          </p>
+      {markers.length === 0 && !mode && (
+        <div className="text-center py-4 text-sm text-[var(--color-text-secondary)]">
+          <AlertTriangle className="h-6 w-6 mx-auto mb-1.5 opacity-30" />
+          <p className="text-xs">Usa &quot;Agregar&quot; para marcar daños en el vehículo</p>
         </div>
       )}
 
       {/* Damage notes */}
-      <div className="space-y-1.5">
-        <p className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
-          Notas adicionales
-        </p>
-        <Textarea
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          placeholder="Observaciones generales sobre el estado del vehículo..."
-          className="min-h-[60px] rounded-xl resize-none text-sm"
-        />
-      </div>
+      <Textarea
+        value={notes}
+        onChange={(e) => updateNotes(e.target.value)}
+        placeholder="Notas adicionales sobre el estado del vehículo..."
+        className="min-h-[50px] rounded-xl resize-none text-sm"
+      />
     </div>
   );
 }
